@@ -100,4 +100,3 @@ if bat_speed_metrics:
     st.markdown(bat_speed_metrics)
 if exit_velocity_metrics:
     st.markdown(exit_velocity_metrics)
-
