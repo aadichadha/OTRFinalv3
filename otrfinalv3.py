@@ -1,5 +1,8 @@
 import streamlit as st
 import pandas as pd
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 # Title and Introduction
 st.title("Baseball Metrics Analyzer")
@@ -25,74 +28,78 @@ benchmarks = {
 # Process Bat Speed File
 bat_speed_metrics = ""
 if bat_speed_file:
-    # Load the file and access Column H (8th column)
     df_bat_speed = pd.read_csv(bat_speed_file, skiprows=20)
     df_bat_speed.columns = df_bat_speed.columns.str.strip()
-    bat_speed_data = df_bat_speed.iloc[:, 7]  # Column H is the 8th column (0-indexed)
-    player_avg_bat_speed = bat_speed_data.mean()
-    top_10_percent_bat_speed = bat_speed_data.quantile(0.90)
-    top_10_percent_swings = df_bat_speed[bat_speed_data >= top_10_percent_bat_speed]
+    if "Bat Speed (mph)" in df_bat_speed.columns:
+        bat_speed_data = df_bat_speed["Bat Speed (mph)"]
+        player_avg_bat_speed = bat_speed_data.mean()
+        top_10_percent_bat_speed = bat_speed_data.quantile(0.90)
+        top_10_percent_swings = df_bat_speed[bat_speed_data >= top_10_percent_bat_speed]
 
-    # New Metric: Average Attack Angle for Top 10% Bat Speed Swings
-    avg_attack_angle_top_10 = None
-    if "Attack Angle (deg)" in df_bat_speed.columns:
-        avg_attack_angle_top_10 = top_10_percent_swings["Attack Angle (deg)"].mean()
+        # New Metric: Average Attack Angle for Top 10% Bat Speed Swings
+        avg_attack_angle_top_10 = None
+        if "Attack Angle (deg)" in df_bat_speed.columns:
+            avg_attack_angle_top_10 = top_10_percent_swings["Attack Angle (deg)"].mean()
 
-    # New Metric: Average Time to Contact
-    avg_time_to_contact = None
-    if "Time to Contact (sec)" in df_bat_speed.columns:
-        avg_time_to_contact = df_bat_speed["Time to Contact (sec)"].mean()
+        # New Metric: Average Time to Contact
+        avg_time_to_contact = None
+        if "Time to Contact (sec)" in df_bat_speed.columns:
+            avg_time_to_contact = df_bat_speed["Time to Contact (sec)"].mean()
 
-    # Benchmarks for Bat Speed
-    bat_speed_benchmark = benchmarks[player_level]["Avg BatSpeed"]
-    top_90_benchmark = benchmarks[player_level]["90th% BatSpeed"]
+        # Benchmarks for Bat Speed
+        bat_speed_benchmark = benchmarks[player_level]["Avg BatSpeed"]
+        top_90_benchmark = benchmarks[player_level]["90th% BatSpeed"]
 
-    # Format Bat Speed Metrics
-    bat_speed_metrics = (
-        "### Bat Speed Metrics\n"
-        f"- **Player Average Bat Speed:** {player_avg_bat_speed:.2f} mph (Benchmark: {bat_speed_benchmark} mph)\n"
-        f"- **Top 10% Bat Speed:** {top_10_percent_bat_speed:.2f} mph (Benchmark: {top_90_benchmark} mph)\n"
-    )
-    if avg_attack_angle_top_10 is not None:
-        bat_speed_metrics += f"- **Average Attack Angle (Top 10% Bat Speed Swings):** {avg_attack_angle_top_10:.2f}°\n"
-    if avg_time_to_contact is not None:
-        bat_speed_metrics += f"- **Average Time to Contact:** {avg_time_to_contact:.2f} seconds\n"
+        # Format Bat Speed Metrics
+        bat_speed_metrics = (
+            "### Bat Speed Metrics\n"
+            f"- **Player Average Bat Speed:** {player_avg_bat_speed:.2f} mph (Benchmark: {bat_speed_benchmark} mph)\n"
+            f"- **Top 10% Bat Speed:** {top_10_percent_bat_speed:.2f} mph (Benchmark: {top_90_benchmark} mph)\n"
+        )
+        if avg_attack_angle_top_10 is not None:
+            bat_speed_metrics += f"- **Average Attack Angle (Top 10% Bat Speed Swings):** {avg_attack_angle_top_10:.2f}°\n"
+        if avg_time_to_contact is not None:
+            bat_speed_metrics += f"- **Average Time to Contact:** {avg_time_to_contact:.2f} seconds\n"
+    else:
+        st.error("The 'Bat Speed (mph)' column was not found in the uploaded file.")
 
 # Process Exit Velocity File
 exit_velocity_metrics = ""
 if exit_velocity_file:
-    # Load the file and access Column H (8th column)
     df_exit_velocity = pd.read_csv(exit_velocity_file, skiprows=20)
     df_exit_velocity.columns = df_exit_velocity.columns.str.strip()
-    exit_velocity_data = df_exit_velocity.iloc[:, 7]  # Column H is the 8th column (0-indexed)
-    exit_velocity_avg = exit_velocity_data[exit_velocity_data > 0].mean()  # Ignore zero values
-    top_8_percent_exit_velocity = exit_velocity_data.quantile(0.92)
-    top_8_percent_swings = df_exit_velocity[exit_velocity_data >= top_8_percent_exit_velocity]
+    if "Velo" in df_exit_velocity.columns:
+        exit_velocity_data = df_exit_velocity["Velo"]
+        exit_velocity_avg = exit_velocity_data[exit_velocity_data > 0].mean()  # Ignore zero values
+        top_8_percent_exit_velocity = exit_velocity_data.quantile(0.92)
+        top_8_percent_swings = df_exit_velocity[exit_velocity_data >= top_8_percent_exit_velocity]
 
-    # New Metric: Average Launch Angle for Top 8% Exit Velocity Swings
-    avg_launch_angle_top_8 = None
-    if "LA" in df_exit_velocity.columns:
-        avg_launch_angle_top_8 = top_8_percent_swings["LA"].mean()
+        # New Metric: Average Launch Angle for Top 8% Exit Velocity Swings
+        avg_launch_angle_top_8 = None
+        if "LA" in df_exit_velocity.columns:
+            avg_launch_angle_top_8 = top_8_percent_swings["LA"].mean()
 
-    # New Metric: Average Distance for Top 8% Exit Velocity Swings
-    avg_distance_top_8 = None
-    if "Distance" in df_exit_velocity.columns:
-        avg_distance_top_8 = top_8_percent_swings["Distance"].mean()
+        # New Metric: Average Distance for Top 8% Exit Velocity Swings
+        avg_distance_top_8 = None
+        if "Distance" in df_exit_velocity.columns:
+            avg_distance_top_8 = top_8_percent_swings["Distance"].mean()
 
-    # Benchmarks for Exit Velocity
-    ev_benchmark = benchmarks[player_level]["Avg EV"]
-    top_8_benchmark = benchmarks[player_level]["Top 8th EV"]
+        # Benchmarks for Exit Velocity
+        ev_benchmark = benchmarks[player_level]["Avg EV"]
+        top_8_benchmark = benchmarks[player_level]["Top 8th EV"]
 
-    # Format Exit Velocity Metrics
-    exit_velocity_metrics = (
-        "### Exit Velocity Metrics\n"
-        f"- **Average Exit Velocity:** {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)\n"
-        f"- **Top 8% Exit Velocity:** {top_8_percent_exit_velocity:.2f} mph (Benchmark: {top_8_benchmark} mph)\n"
-    )
-    if avg_launch_angle_top_8 is not None:
-        exit_velocity_metrics += f"- **Average Launch Angle (Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}°\n"
-    if avg_distance_top_8 is not None:
-        exit_velocity_metrics += f"- **Average Distance (Top 8% Exit Velocity Swings):** {avg_distance_top_8:.2f} ft\n"
+        # Format Exit Velocity Metrics
+        exit_velocity_metrics = (
+            "### Exit Velocity Metrics\n"
+            f"- **Average Exit Velocity:** {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)\n"
+            f"- **Top 8% Exit Velocity:** {top_8_percent_exit_velocity:.2f} mph (Benchmark: {top_8_benchmark} mph)\n"
+        )
+        if avg_launch_angle_top_8 is not None:
+            exit_velocity_metrics += f"- **Average Launch Angle (Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}°\n"
+        if avg_distance_top_8 is not None:
+            exit_velocity_metrics += f"- **Average Distance (Top 8% Exit Velocity Swings):** {avg_distance_top_8:.2f} ft\n"
+    else:
+        st.error("The 'Velo' column was not found in the uploaded file.")
 
 # Display Results
 st.write("## Calculated Metrics")
@@ -100,4 +107,5 @@ if bat_speed_metrics:
     st.markdown(bat_speed_metrics)
 if exit_velocity_metrics:
     st.markdown(exit_velocity_metrics)
+
 
