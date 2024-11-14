@@ -28,8 +28,11 @@ benchmarks = {
 # Process Bat Speed File
 bat_speed_metrics = ""
 if bat_speed_file:
+    # Use the same method as in otrfinalv1 to read and parse the file
     df_bat_speed = pd.read_csv(bat_speed_file, skiprows=20)
     df_bat_speed.columns = df_bat_speed.columns.str.strip()
+    
+    # Check for 'Bat Speed (mph)' and perform calculations
     if "Bat Speed (mph)" in df_bat_speed.columns:
         bat_speed_data = df_bat_speed["Bat Speed (mph)"]
         player_avg_bat_speed = bat_speed_data.mean()
@@ -66,8 +69,11 @@ if bat_speed_file:
 # Process Exit Velocity File
 exit_velocity_metrics = ""
 if exit_velocity_file:
+    # Use the same method as in otrfinalv1 to read and parse the file
     df_exit_velocity = pd.read_csv(exit_velocity_file, skiprows=20)
     df_exit_velocity.columns = df_exit_velocity.columns.str.strip()
+    
+    # Check for 'Velo' and perform calculations
     if "Velo" in df_exit_velocity.columns:
         exit_velocity_data = df_exit_velocity["Velo"]
         exit_velocity_avg = exit_velocity_data[exit_velocity_data > 0].mean()  # Ignore zero values
@@ -107,5 +113,4 @@ if bat_speed_metrics:
     st.markdown(bat_speed_metrics)
 if exit_velocity_metrics:
     st.markdown(exit_velocity_metrics)
-
 
