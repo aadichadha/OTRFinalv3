@@ -52,13 +52,17 @@ exit_velocity_metrics = ""
 if exit_velocity_file:
     df_exit_velocity = pd.read_csv(exit_velocity_file)  # No rows are skipped here
     exit_velocity_data = df_exit_velocity.iloc[:, 7]  # Column H: "Velo"
-    launch_angle_data = df_exit_velocity.iloc[:, 8]  # Column I: "LA"
-    distance_data = df_exit_velocity.iloc[:, 9]  # Column J: "Dist"
+
+    # Filter out rows where Exit Velocity is zero
+    non_zero_ev_rows = df_exit_velocity[exit_velocity_data > 0]
+    exit_velocity_data = non_zero_ev_rows.iloc[:, 7]  # Filtered "Velo"
+    launch_angle_data = non_zero_ev_rows.iloc[:, 8]  # Column I: "LA"
+    distance_data = non_zero_ev_rows.iloc[:, 9]  # Column J: "Dist"
 
     # Calculate Exit Velocity Metrics
-    exit_velocity_avg = exit_velocity_data[exit_velocity_data > 0].mean()  # Ignore zero values
+    exit_velocity_avg = exit_velocity_data.mean()  # Use filtered data
     top_8_percent_exit_velocity = exit_velocity_data.quantile(0.92)
-    top_8_percent_swings = df_exit_velocity[exit_velocity_data >= top_8_percent_exit_velocity]
+    top_8_percent_swings = non_zero_ev_rows[exit_velocity_data >= top_8_percent_exit_velocity]
     avg_launch_angle_top_8 = launch_angle_data[top_8_percent_swings.index].mean()
     avg_distance_top_8 = distance_data[top_8_percent_swings.index].mean()
 
@@ -81,3 +85,4 @@ if bat_speed_metrics:
     st.markdown(bat_speed_metrics)
 if exit_velocity_metrics:
     st.markdown(exit_velocity_metrics)
+
