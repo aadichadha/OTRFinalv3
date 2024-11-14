@@ -22,10 +22,10 @@ benchmarks = {
     "Professional": {"Avg EV": 94.3, "Top 8th EV": 104.5, "Avg BatSpeed": 78.2, "90th% BatSpeed": 82.3}
 }
 
-# Process Bat Speed File
+# Process Bat Speed File (Skip the first 8 rows)
 bat_speed_metrics = ""
 if bat_speed_file:
-    df_bat_speed = pd.read_csv(bat_speed_file, skiprows=8)  # Skip only the first 8 rows
+    df_bat_speed = pd.read_csv(bat_speed_file, skiprows=8)
     bat_speed_data = df_bat_speed.iloc[:, 7]  # Column H: "Bat Speed (mph)"
     attack_angle_data = df_bat_speed.iloc[:, 10]  # Column K: "Attack Angle (deg)"
 
@@ -47,10 +47,10 @@ if bat_speed_file:
         f"- **Average Attack Angle (Top 10% Bat Speed Swings):** {avg_attack_angle_top_10:.2f}°\n"
     )
 
-# Process Exit Velocity File
+# Process Exit Velocity File (No rows skipped)
 exit_velocity_metrics = ""
 if exit_velocity_file:
-    df_exit_velocity = pd.read_csv(exit_velocity_file, skiprows=20)  # Keeping 20 rows skipped for Exit Velocity file
+    df_exit_velocity = pd.read_csv(exit_velocity_file)  # No rows are skipped here
     exit_velocity_data = df_exit_velocity.iloc[:, 7]  # Column H: "Velo"
     launch_angle_data = df_exit_velocity.iloc[:, 8]  # Column I: "LA"
     distance_data = df_exit_velocity.iloc[:, 9]  # Column J: "Dist"
