@@ -26,8 +26,8 @@ benchmarks = {
 bat_speed_metrics = ""
 if bat_speed_file:
     df_bat_speed = pd.read_csv(bat_speed_file, skiprows=8)
-    bat_speed_data = df_bat_speed.iloc[:, 7]  # Column H: "Bat Speed (mph)"
-    attack_angle_data = df_bat_speed.iloc[:, 10]  # Column K: "Attack Angle (deg)"
+    bat_speed_data = pd.to_numeric(df_bat_speed.iloc[:, 7], errors='coerce')  # Column H: "Bat Speed (mph)"
+    attack_angle_data = pd.to_numeric(df_bat_speed.iloc[:, 10], errors='coerce')  # Column K: "Attack Angle (deg)"
 
     # Calculate Bat Speed Metrics
     player_avg_bat_speed = bat_speed_data.mean()
@@ -51,13 +51,13 @@ if bat_speed_file:
 exit_velocity_metrics = ""
 if exit_velocity_file:
     df_exit_velocity = pd.read_csv(exit_velocity_file)  # No rows are skipped here
-    exit_velocity_data = df_exit_velocity.iloc[:, 7]  # Column H: "Velo"
+    exit_velocity_data = pd.to_numeric(df_exit_velocity.iloc[:, 7], errors='coerce')  # Column H: "Velo"
 
-    # Filter out rows where Exit Velocity is zero
+    # Filter out rows where Exit Velocity is zero or NaN
     non_zero_ev_rows = df_exit_velocity[exit_velocity_data > 0]
-    exit_velocity_data = non_zero_ev_rows.iloc[:, 7]  # Filtered "Velo"
-    launch_angle_data = non_zero_ev_rows.iloc[:, 8]  # Column I: "LA"
-    distance_data = non_zero_ev_rows.iloc[:, 9]  # Column J: "Dist"
+    exit_velocity_data = pd.to_numeric(non_zero_ev_rows.iloc[:, 7], errors='coerce')  # Filtered "Velo"
+    launch_angle_data = pd.to_numeric(non_zero_ev_rows.iloc[:, 8], errors='coerce')  # Column I: "LA"
+    distance_data = pd.to_numeric(non_zero_ev_rows.iloc[:, 9], errors='coerce')  # Column J: "Dist"
 
     # Calculate Exit Velocity Metrics
     exit_velocity_avg = exit_velocity_data.mean()  # Use filtered data
@@ -85,4 +85,5 @@ if bat_speed_metrics:
     st.markdown(bat_speed_metrics)
 if exit_velocity_metrics:
     st.markdown(exit_velocity_metrics)
+
 
