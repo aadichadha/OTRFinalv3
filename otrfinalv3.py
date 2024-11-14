@@ -158,4 +158,6 @@ recipient_email = st.text_input("Enter Email Address")
 if st.button("Send Report"):
     if recipient_email:
         send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
-    else
+    else:
+        st.error("Please enter a
+
