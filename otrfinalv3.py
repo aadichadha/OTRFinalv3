@@ -35,13 +35,13 @@ if bat_speed_file:
 
     # New Metric: Average Attack Angle for Top 10% Bat Speed Swings
     avg_attack_angle_top_10 = None
-    if "Attack Angle" in df_bat_speed.columns:
-        avg_attack_angle_top_10 = top_10_percent_swings["Attack Angle"].mean()
+    if "Attack Angle (deg)" in df_bat_speed.columns:
+        avg_attack_angle_top_10 = top_10_percent_swings["Attack Angle (deg)"].mean()
 
     # New Metric: Average Time to Contact
     avg_time_to_contact = None
-    if "Time to Contact" in df_bat_speed.columns:
-        avg_time_to_contact = df_bat_speed["Time to Contact"].mean()
+    if "Time to Contact (sec)" in df_bat_speed.columns:
+        avg_time_to_contact = df_bat_speed["Time to Contact (sec)"].mean()
 
     # Benchmarks for Bat Speed
     bat_speed_benchmark = benchmarks[player_level]["Avg BatSpeed"]
@@ -71,8 +71,8 @@ if exit_velocity_file:
 
     # New Metric: Average Launch Angle for Top 8% Exit Velocity Swings
     avg_launch_angle_top_8 = None
-    if "Launch Angle" in df_exit_velocity.columns:
-        avg_launch_angle_top_8 = top_8_percent_swings["Launch Angle"].mean()
+    if "LA" in df_exit_velocity.columns:
+        avg_launch_angle_top_8 = top_8_percent_swings["LA"].mean()
 
     # New Metric: Average Distance for Top 8% Exit Velocity Swings
     avg_distance_top_8 = None
@@ -100,3 +100,4 @@ if bat_speed_metrics:
     st.markdown(bat_speed_metrics)
 if exit_velocity_metrics:
     st.markdown(exit_velocity_metrics)
+
