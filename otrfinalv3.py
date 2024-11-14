@@ -1,5 +1,8 @@
 import streamlit as st
 import pandas as pd
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 # Title and Introduction
 st.title("Baseball Metrics Analyzer")
@@ -12,14 +15,32 @@ exit_velocity_file = st.file_uploader("Upload Exit Velocity File", type="csv")
 # Ask for Player Level
 player_level = st.selectbox("Select Player Level", ["Youth", "High School", "College", "Indy", "Affiliate", "Professional"])
 
-# Benchmarks Based on Level
+# Benchmarks Based on Level (from your PDF)
 benchmarks = {
-    "Youth": {"Avg EV": 58.4, "Top 8th EV": 70.19, "Avg BatSpeed": 49.21, "90th% BatSpeed": 52.81},
-    "High School": {"Avg EV": 74.54, "Top 8th EV": 86.75, "Avg BatSpeed": 62.64, "90th% BatSpeed": 67.02},
-    "College": {"Avg EV": 81.57, "Top 8th EV": 94.44, "Avg BatSpeed": 67.53, "90th% BatSpeed": 72.54},
-    "Indy": {"Avg EV": 85.99, "Top 8th EV": 98.12, "Avg BatSpeed": 69.2, "90th% BatSpeed": 74.04},
-    "Affiliate": {"Avg EV": 85.49, "Top 8th EV": 98.71, "Avg BatSpeed": 70.17, "90th% BatSpeed": 75.14},
-    "Professional": {"Avg EV": 94.3, "Top 8th EV": 104.5, "Avg BatSpeed": 78.2, "90th% BatSpeed": 82.3}
+    "Youth": {
+        "Avg EV": 58.4, "Top 8th EV": 70.19, "Avg BatSpeed": 49.21, "90th% BatSpeed": 52.81,
+        "Avg TimeToContact": 0.19, "Avg AttackAngle": 11.78
+    },
+    "High School": {
+        "Avg EV": 74.54, "Top 8th EV": 86.75, "Avg BatSpeed": 62.64, "90th% BatSpeed": 67.02,
+        "Avg TimeToContact": 0.163, "Avg AttackAngle": 9.8
+    },
+    "College": {
+        "Avg EV": 81.57, "Top 8th EV": 94.44, "Avg BatSpeed": 67.53, "90th% BatSpeed": 72.54,
+        "Avg TimeToContact": 0.154, "Avg AttackAngle": 10.5
+    },
+    "Indy": {
+        "Avg EV": 85.99, "Top 8th EV": 98.12, "Avg BatSpeed": 69.2, "90th% BatSpeed": 74.04,
+        "Avg TimeToContact": 0.147, "Avg AttackAngle": 10.62
+    },
+    "Affiliate": {
+        "Avg EV": 85.49, "Top 8th EV": 98.71, "Avg BatSpeed": 70.17, "90th% BatSpeed": 75.14,
+        "Avg TimeToContact": 0.149, "Avg AttackAngle": 10.11
+    },
+    "Professional": {
+        "Avg EV": 94.3, "Top 8th EV": 104.5, "Avg BatSpeed": 78.2, "90th% BatSpeed": 82.3,
+        "Avg TimeToContact": 0.149, "Avg AttackAngle": 10.9
+    }
 }
 
 # Process Bat Speed File (Skip the first 8 rows)
@@ -28,23 +49,28 @@ if bat_speed_file:
     df_bat_speed = pd.read_csv(bat_speed_file, skiprows=8)
     bat_speed_data = pd.to_numeric(df_bat_speed.iloc[:, 7], errors='coerce')  # Column H: "Bat Speed (mph)"
     attack_angle_data = pd.to_numeric(df_bat_speed.iloc[:, 10], errors='coerce')  # Column K: "Attack Angle (deg)"
+    time_to_contact_data = pd.to_numeric(df_bat_speed.iloc[:, 15], errors='coerce')  # Column: "Time to Contact (sec)"
 
     # Calculate Bat Speed Metrics
     player_avg_bat_speed = bat_speed_data.mean()
     top_10_percent_bat_speed = bat_speed_data.quantile(0.90)
     top_10_percent_swings = df_bat_speed[bat_speed_data >= top_10_percent_bat_speed]
     avg_attack_angle_top_10 = attack_angle_data[top_10_percent_swings.index].mean()
+    avg_time_to_contact = time_to_contact_data.mean()
 
-    # Benchmarks for Bat Speed
+    # Benchmarks for Bat Speed, Time to Contact, and Attack Angle
     bat_speed_benchmark = benchmarks[player_level]["Avg BatSpeed"]
     top_90_benchmark = benchmarks[player_level]["90th% BatSpeed"]
+    time_to_contact_benchmark = benchmarks[player_level]["Avg TimeToContact"]
+    attack_angle_benchmark = benchmarks[player_level]["Avg AttackAngle"]
 
     # Format Bat Speed Metrics
     bat_speed_metrics = (
         "### Bat Speed Metrics\n"
         f"- **Player Average Bat Speed:** {player_avg_bat_speed:.2f} mph (Benchmark: {bat_speed_benchmark} mph)\n"
         f"- **Top 10% Bat Speed:** {top_10_percent_bat_speed:.2f} mph (Benchmark: {top_90_benchmark} mph)\n"
-        f"- **Average Attack Angle (Top 10% Bat Speed Swings):** {avg_attack_angle_top_10:.2f}°\n"
+        f"- **Average Attack Angle (Top 10% Bat Speed Swings):** {avg_attack_angle_top_10:.2f}° (Benchmark: {attack_angle_benchmark}°)\n"
+        f"- **Average Time to Contact:** {avg_time_to_contact:.3f} sec (Benchmark: {time_to_contact_benchmark} sec)\n"
     )
 
 # Process Exit Velocity File (No rows skipped)
@@ -86,4 +112,50 @@ if bat_speed_metrics:
 if exit_velocity_metrics:
     st.markdown(exit_velocity_metrics)
 
+# Email Configuration
+email_address = "aadichadha@gmail.com"  # Your email address
+email_password = "eeoi odag olix nnfc"  # Your app-specific password
+smtp_server = "smtp.gmail.com"
+smtp_port = 587
 
+# Function to Send Email
+def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics):
+    # Create the email content
+    msg = MIMEMultipart()
+    msg['From'] = email_address
+    msg['To'] = recipient_email
+    msg['Subject'] = "Baseball Metrics Report"
+
+    # Construct the email body with a professional layout
+    email_body = f"""
+    <html>
+    <body>
+        <h2>Baseball Metrics Report</h2>
+        <p>Please find the detailed analysis of the uploaded baseball metrics below:</p>
+        <h3>Bat Speed Metrics</h3>
+        <p>{bat_speed_metrics.replace('### ', '')}</p>
+        <h3>Exit Velocity Metrics</h3>
+        <p>{exit_velocity_metrics.replace('### ', '')}</p>
+        <p>Best Regards,<br>Your Baseball Metrics Analyzer</p>
+    </body>
+    </html>
+    """
+    msg.attach(MIMEText(email_body, 'html'))
+
+    # Send the email
+    try:
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(email_address, email_password)
+            server.send_message(msg)
+        st.success("Report sent successfully!")
+    except Exception as e:
+        st.error(f"Failed to send email: {e}")
+
+# Streamlit Email Input and Button
+st.write("## Email the Report")
+recipient_email = st.text_input("Enter Email Address")
+if st.button("Send Report"):
+    if recipient_email:
+        send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
+    else
