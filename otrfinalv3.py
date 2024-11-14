@@ -159,5 +159,4 @@ if st.button("Send Report"):
     if recipient_email:
         send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
     else:
-        st.error("Please enter a
-
+        st.error("Please enter a valid email address.")
