@@ -13,33 +13,29 @@ bat_speed_file = st.file_uploader("Upload Bat Speed File", type="csv")
 exit_velocity_file = st.file_uploader("Upload Exit Velocity File", type="csv")
 
 # Ask for Player Level
-player_level = st.selectbox("Select Player Level", ["Youth", "High School", "College", "Indy", "Affiliate", "Professional"])
+player_level = st.selectbox("Select Player Level", ["Youth", "High School", "College", "Indy", "Affiliate"])
 
-# Benchmarks Based on Level (from your PDF)
+# Updated Benchmarks Based on Levels
 benchmarks = {
     "Youth": {
-        "Avg EV": 58.4, "Top 8th EV": 70.19, "Avg BatSpeed": 49.21, "90th% BatSpeed": 52.81,
-        "Avg TimeToContact": 0.19, "Avg AttackAngle": 11.78, "Avg LA": 16.0, "HHB LA": 16.0
+        "Avg EV": 58.4, "Top 8th EV": 70.19, "Avg LA": 12.14, "HHB LA": 8.78,
+        "Avg BatSpeed": 49.21, "90th% BatSpeed": 52.81, "Avg TimeToContact": 0.19, "Avg AttackAngle": 11.78
     },
     "High School": {
-        "Avg EV": 74.54, "Top 8th EV": 86.75, "Avg BatSpeed": 62.64, "90th% BatSpeed": 67.02,
-        "Avg TimeToContact": 0.163, "Avg AttackAngle": 9.8, "Avg LA": 15.2, "HHB LA": 15.55
+        "Avg EV": 74.54, "Top 8th EV": 86.75, "Avg LA": 16.51, "HHB LA": 11.47,
+        "Avg BatSpeed": 62.4, "90th% BatSpeed": 67.02, "Avg TimeToContact": 0.163, "Avg AttackAngle": 9.8
     },
     "College": {
-        "Avg EV": 81.57, "Top 8th EV": 94.44, "Avg BatSpeed": 67.53, "90th% BatSpeed": 72.54,
-        "Avg TimeToContact": 0.154, "Avg AttackAngle": 10.5, "Avg LA": 17.6, "HHB LA": 17.57
+        "Avg EV": 81.57, "Top 8th EV": 94.44, "Avg LA": 17.57, "HHB LA": 12.86,
+        "Avg BatSpeed": 67.53, "90th% BatSpeed": 72.54, "Avg TimeToContact": 0.154, "Avg AttackAngle": 10.52
     },
     "Indy": {
-        "Avg EV": 85.99, "Top 8th EV": 98.12, "Avg BatSpeed": 69.2, "90th% BatSpeed": 74.04,
-        "Avg TimeToContact": 0.147, "Avg AttackAngle": 10.62, "Avg LA": 18.68, "HHB LA": 14.74
+        "Avg EV": 85.99, "Top 8th EV": 98.12, "Avg LA": 18.68, "HHB LA": 14.74,
+        "Avg BatSpeed": 69.2, "90th% BatSpeed": 74.04, "Avg TimeToContact": 0.154, "Avg AttackAngle": 10.62
     },
     "Affiliate": {
-        "Avg EV": 85.49, "Top 8th EV": 98.71, "Avg BatSpeed": 70.17, "90th% BatSpeed": 75.14,
-        "Avg TimeToContact": 0.149, "Avg AttackAngle": 10.11, "Avg LA": 18.77, "HHB LA": 17.3
-    },
-    "Professional": {
-        "Avg EV": 94.3, "Top 8th EV": 104.5, "Avg BatSpeed": 78.2, "90th% BatSpeed": 82.3,
-        "Avg TimeToContact": 0.149, "Avg AttackAngle": 10.9, "Avg LA": 17.3, "HHB LA": 17.3
+        "Avg EV": 85.49, "Top 8th EV": 98.71, "Avg LA": 18.77, "HHB LA": 15.55,
+        "Avg BatSpeed": 70.17, "90th% BatSpeed": 75.14, "Avg TimeToContact": 0.147, "Avg AttackAngle": 11.09
     }
 }
 
