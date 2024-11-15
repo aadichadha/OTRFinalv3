@@ -19,27 +19,27 @@ player_level = st.selectbox("Select Player Level", ["Youth", "High School", "Col
 benchmarks = {
     "Youth": {
         "Avg EV": 58.4, "Top 8th EV": 70.19, "Avg BatSpeed": 49.21, "90th% BatSpeed": 52.81,
-        "Avg TimeToContact": 0.19, "Avg AttackAngle": 11.78
+        "Avg TimeToContact": 0.19, "Avg AttackAngle": 11.78, "Avg LA": 16.0, "HHB LA": 16.0
     },
     "High School": {
         "Avg EV": 74.54, "Top 8th EV": 86.75, "Avg BatSpeed": 62.64, "90th% BatSpeed": 67.02,
-        "Avg TimeToContact": 0.163, "Avg AttackAngle": 9.8
+        "Avg TimeToContact": 0.163, "Avg AttackAngle": 9.8, "Avg LA": 15.2, "HHB LA": 15.55
     },
     "College": {
         "Avg EV": 81.57, "Top 8th EV": 94.44, "Avg BatSpeed": 67.53, "90th% BatSpeed": 72.54,
-        "Avg TimeToContact": 0.154, "Avg AttackAngle": 10.5
+        "Avg TimeToContact": 0.154, "Avg AttackAngle": 10.5, "Avg LA": 17.6, "HHB LA": 17.57
     },
     "Indy": {
         "Avg EV": 85.99, "Top 8th EV": 98.12, "Avg BatSpeed": 69.2, "90th% BatSpeed": 74.04,
-        "Avg TimeToContact": 0.147, "Avg AttackAngle": 10.62
+        "Avg TimeToContact": 0.147, "Avg AttackAngle": 10.62, "Avg LA": 18.68, "HHB LA": 14.74
     },
     "Affiliate": {
         "Avg EV": 85.49, "Top 8th EV": 98.71, "Avg BatSpeed": 70.17, "90th% BatSpeed": 75.14,
-        "Avg TimeToContact": 0.149, "Avg AttackAngle": 10.11
+        "Avg TimeToContact": 0.149, "Avg AttackAngle": 10.11, "Avg LA": 18.77, "HHB LA": 17.3
     },
     "Professional": {
         "Avg EV": 94.3, "Top 8th EV": 104.5, "Avg BatSpeed": 78.2, "90th% BatSpeed": 82.3,
-        "Avg TimeToContact": 0.149, "Avg AttackAngle": 10.9
+        "Avg TimeToContact": 0.149, "Avg AttackAngle": 10.9, "Avg LA": 17.3, "HHB LA": 17.3
     }
 }
 
@@ -78,12 +78,14 @@ exit_velocity_metrics = ""
 if exit_velocity_file:
     df_exit_velocity = pd.read_csv(exit_velocity_file)  # No rows are skipped here
     exit_velocity_data = pd.to_numeric(df_exit_velocity.iloc[:, 7], errors='coerce')  # Column H: "Velo"
+    launch_angle_data = pd.to_numeric(df_exit_velocity.iloc[:, 8], errors='coerce')  # Column I: "LA"
+    distance_data = pd.to_numeric(df_exit_velocity.iloc[:, 9], errors='coerce')  # Column J: "Dist"
 
     # Filter out rows where Exit Velocity is zero or NaN
     non_zero_ev_rows = df_exit_velocity[exit_velocity_data > 0]
     exit_velocity_data = pd.to_numeric(non_zero_ev_rows.iloc[:, 7], errors='coerce')  # Filtered "Velo"
-    launch_angle_data = pd.to_numeric(non_zero_ev_rows.iloc[:, 8], errors='coerce')  # Column I: "LA"
-    distance_data = pd.to_numeric(non_zero_ev_rows.iloc[:, 9], errors='coerce')  # Column J: "Dist"
+    launch_angle_data = pd.to_numeric(non_zero_ev_rows.iloc[:, 8], errors='coerce')  # Filtered "LA"
+    distance_data = pd.to_numeric(non_zero_ev_rows.iloc[:, 9], errors='coerce')  # Filtered "Dist"
 
     # Calculate Exit Velocity Metrics
     exit_velocity_avg = exit_velocity_data.mean()  # Use filtered data
@@ -91,17 +93,21 @@ if exit_velocity_file:
     top_8_percent_swings = non_zero_ev_rows[exit_velocity_data >= top_8_percent_exit_velocity]
     avg_launch_angle_top_8 = launch_angle_data[top_8_percent_swings.index].mean()
     avg_distance_top_8 = distance_data[top_8_percent_swings.index].mean()
+    total_avg_launch_angle = launch_angle_data[launch_angle_data > 0].mean()  # Total average launch angle ignoring zeros
 
-    # Benchmarks for Exit Velocity
+    # Benchmarks for Exit Velocity, Avg LA, and HHB LA
     ev_benchmark = benchmarks[player_level]["Avg EV"]
     top_8_benchmark = benchmarks[player_level]["Top 8th EV"]
+    la_benchmark = benchmarks[player_level]["Avg LA"]
+    hhb_la_benchmark = benchmarks[player_level]["HHB LA"]
 
     # Format Exit Velocity Metrics
     exit_velocity_metrics = (
         "### Exit Velocity Metrics\n"
         f"- **Average Exit Velocity:** {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)\n"
         f"- **Top 8% Exit Velocity:** {top_8_percent_exit_velocity:.2f} mph (Benchmark: {top_8_benchmark} mph)\n"
-        f"- **Average Launch Angle (Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}°\n"
+        f"- **Average Launch Angle (Top 8% Exit Velocity Swings) (HHB LA):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
+        f"- **Total Average Launch Angle (Ignoring Zeros) (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
         f"- **Average Distance (Top 8% Exit Velocity Swings):** {avg_distance_top_8:.2f} ft\n"
     )
 
