@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 # Title and Introduction
-st.title("Baseball Metrics Analyzer")
+st.title("OTR Baseball Metrics Analyzer")
 st.write("Upload your Bat Speed and Exit Velocity CSV files to generate a comprehensive report.")
 
 # File Uploads
@@ -106,9 +106,9 @@ if exit_velocity_file:
         "### Exit Velocity Metrics\n"
         f"- **Average Exit Velocity:** {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)\n"
         f"- **Top 8% Exit Velocity:** {top_8_percent_exit_velocity:.2f} mph (Benchmark: {top_8_benchmark} mph)\n"
-        f"- **Average Launch Angle (Top 8% Exit Velocity Swings) (HHB LA):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
-        f"- **Total Average Launch Angle (Ignoring Zeros) (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
-        f"- **Average Distance (Top 8% Exit Velocity Swings):** {avg_distance_top_8:.2f} ft\n"
+        f"- **Average Launch Angle (On Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
+        f"- **Total Average Launch Angle (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
+        f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
     )
 
 # Display Results
