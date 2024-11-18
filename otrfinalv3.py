@@ -128,16 +128,34 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
     msg['To'] = recipient_email
     msg['Subject'] = "Baseball Metrics Report"
 
+# Function to Send Email
+def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics):
+    # Create the email content
+    msg = MIMEMultipart()
+    msg['From'] = email_address
+    msg['To'] = recipient_email
+    msg['Subject'] = "Baseball Metrics Report"
+
     # Construct the email body with a professional layout
     email_body = f"""
     <html>
     <body>
         <h2>Baseball Metrics Report</h2>
         <p>Please find the detailed analysis of the uploaded baseball metrics below:</p>
+
         <h3>Bat Speed Metrics</h3>
-        <p>{bat_speed_metrics.replace('### ', '')}</p>
+        <p>Average Bat Speed: {player_avg_bat_speed:.2f} mph (Level Average: {bat_speed_benchmark} mph)<br>
+        Top 10% Bat Speed: {top_10_percent_bat_speed:.2f} mph (Level Average: {top_90_benchmark} mph)<br>
+        Average Attack Angle (Top 10% Bat Speed Swings): {avg_attack_angle_top_10:.2f}° (Level Average: {attack_angle_benchmark}°)<br>
+        Average Time to Contact: {avg_time_to_contact:.3f} sec (Level Average: {time_to_contact_benchmark} sec)</p>
+
         <h3>Exit Velocity Metrics</h3>
-        <p>{exit_velocity_metrics.replace('### ', '')}</p>
+        <p>Average Exit Velocity: {exit_velocity_avg:.2f} mph (Level Average: {ev_benchmark} mph)<br>
+        Top 8% Exit Velocity: {top_8_percent_exit_velocity:.2f} mph (Level Average: {top_8_benchmark} mph)<br>
+        Average Launch Angle (On Top 8% Exit Velocity Swings): {avg_launch_angle_top_8:.2f}° (Level Average: {hhb_la_benchmark}°)<br>
+        Total Average Launch Angle (Avg LA): {total_avg_launch_angle:.2f}° (Level Average: {la_benchmark}°)<br>
+        Average Distance (8% swings): {avg_distance_top_8:.2f} ft</p>
+
         <p>Best Regards,<br>Your Baseball Metrics Analyzer</p>
     </body>
     </html>
@@ -154,11 +172,3 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
     except Exception as e:
         st.error(f"Failed to send email: {e}")
 
-# Streamlit Email Input and Button
-st.write("## Email the Report")
-recipient_email = st.text_input("Enter Email Address")
-if st.button("Send Report"):
-    if recipient_email:
-        send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
-    else:
-        st.error("Please enter a valid email address.")
