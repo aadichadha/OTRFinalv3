@@ -121,7 +121,11 @@ smtp_server = "smtp.gmail.com"
 smtp_port = 587
 
 # Updated Function to Send Email
-def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_level):
+def send_email_report(
+    recipient_email, player_avg_bat_speed, top_10_percent_bat_speed, avg_attack_angle_top_10,
+    avg_time_to_contact, exit_velocity_avg, top_8_percent_exit_velocity,
+    avg_launch_angle_top_8, total_avg_launch_angle, avg_distance_top_8, player_level
+):
     # Access benchmarks for the selected player level
     bat_speed_benchmark = benchmarks[player_level]["Avg BatSpeed"]
     top_90_benchmark = benchmarks[player_level]["90th% BatSpeed"]
@@ -179,8 +183,14 @@ st.write("## Email the Report")
 recipient_email = st.text_input("Enter Email Address")
 if st.button("Send Report"):
     if recipient_email:
-        send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_level)
+        send_email_report(
+            recipient_email, player_avg_bat_speed, top_10_percent_bat_speed,
+            avg_attack_angle_top_10, avg_time_to_contact, exit_velocity_avg,
+            top_8_percent_exit_velocity, avg_launch_angle_top_8,
+            total_avg_launch_angle, avg_distance_top_8, player_level
+        )
     else:
         st.error("Please enter a valid email address.")
+
 
 
