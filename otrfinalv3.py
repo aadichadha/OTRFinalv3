@@ -120,16 +120,18 @@ email_password = "eeoi odag olix nnfc"  # Your app-specific password
 smtp_server = "smtp.gmail.com"
 smtp_port = 587
 
-# Function to Send Email
-def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics):
-    # Create the email content
-    msg = MIMEMultipart()
-    msg['From'] = email_address
-    msg['To'] = recipient_email
-    msg['Subject'] = "Baseball Metrics Report"
+# Updated Function to Send Email
+def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_level):
+    # Access benchmarks for the selected player level
+    bat_speed_benchmark = benchmarks[player_level]["Avg BatSpeed"]
+    top_90_benchmark = benchmarks[player_level]["90th% BatSpeed"]
+    time_to_contact_benchmark = benchmarks[player_level]["Avg TimeToContact"]
+    attack_angle_benchmark = benchmarks[player_level]["Avg AttackAngle"]
+    ev_benchmark = benchmarks[player_level]["Avg EV"]
+    top_8_benchmark = benchmarks[player_level]["Top 8th EV"]
+    la_benchmark = benchmarks[player_level]["Avg LA"]
+    hhb_la_benchmark = benchmarks[player_level]["HHB LA"]
 
-# Function to Send Email
-def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics):
     # Create the email content
     msg = MIMEMultipart()
     msg['From'] = email_address
@@ -171,12 +173,13 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
         st.success("Report sent successfully!")
     except Exception as e:
         st.error(f"Failed to send email: {e}")
+
 # Streamlit Email Input and Button
 st.write("## Email the Report")
 recipient_email = st.text_input("Enter Email Address")
 if st.button("Send Report"):
     if recipient_email:
-        send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
+        send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_level)
     else:
         st.error("Please enter a valid email address.")
 
