@@ -163,6 +163,3 @@ def send_email_report(recipient_email, email_body):
         st.success("Report sent successfully!")
     except Exception as e:
         st.error(f"Failed to send email: {e}")
-
-
-
