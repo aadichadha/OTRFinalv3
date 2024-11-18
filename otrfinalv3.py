@@ -171,4 +171,13 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
         st.success("Report sent successfully!")
     except Exception as e:
         st.error(f"Failed to send email: {e}")
+# Streamlit Email Input and Button
+st.write("## Email the Report")
+recipient_email = st.text_input("Enter Email Address")
+if st.button("Send Report"):
+    if recipient_email:
+        send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
+    else:
+        st.error("Please enter a valid email address.")
+
 
