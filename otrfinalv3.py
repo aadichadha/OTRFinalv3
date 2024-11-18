@@ -129,36 +129,23 @@ if st.button("Send Report"):
         # Prepare email content based on available metrics
         email_body = "<html><body><h2>Baseball Metrics Report</h2><p>Please find the detailed analysis of the uploaded baseball metrics below:</p>"
 
-        if 'player_avg_bat_speed' in locals():
-            email_body += f"""
-            <h3>Bat Speed Metrics</h3>
-            <p>Average Bat Speed: {player_avg_bat_speed:.2f} mph (Level Average: {bat_speed_benchmark} mph)<br>
-            Top 10% Bat Speed: {top_10_percent_bat_speed:.2f} mph (Level Average: {top_90_benchmark} mph)<br>
-            Average Attack Angle (Top 10% Bat Speed Swings): {avg_attack_angle_top_10:.2f}° (Level Average: {attack_angle_benchmark}°)<br>
-            Average Time to Contact: {avg_time_to_contact:.3f} sec (Level Average: {time_to_contact_benchmark} sec)</p>
-            """
-        
-        if 'exit_velocity_avg' in locals():
-            email_body += f"""
-            <h3>Exit Velocity Metrics</h3>
-            <p>Average Exit Velocity: {exit_velocity_avg:.2f} mph (Level Average: {ev_benchmark} mph)<br>
-            Top 8% Exit Velocity: {top_8_percent_exit_velocity:.2f} mph (Level Average: {top_8_benchmark} mph)<br>
-            Average Launch Angle (On Top 8% Exit Velocity Swings): {avg_launch_angle_top_8:.2f}° (Level Average: {hhb_la_benchmark}°)<br>
-            Total Average Launch Angle (Avg LA): {total_avg_launch_angle:.2f}° (Level Average: {la_benchmark}°)<br>
-            Average Distance (8% swings): {avg_distance_top_8:.2f} ft</p>
-            """
+        if bat_speed_metrics:
+            email_body += f"<h3>Bat Speed Metrics</h3><p>{bat_speed_metrics.replace('### ', '').replace('\\n', '<br>')}</p>"
+
+        if exit_velocity_metrics:
+            email_body += f"<h3>Exit Velocity Metrics</h3><p>{exit_velocity_metrics.replace('### ', '').replace('\\n', '<br>')}</p>"
 
         email_body += "<p>Best Regards,<br>Your Baseball Metrics Analyzer</p></body></html>"
 
         # Send the email if any metrics are available
-        if 'player_avg_bat_speed' in locals() or 'exit_velocity_avg' in locals():
+        if bat_speed_metrics or exit_velocity_metrics:
             send_email_report(recipient_email, email_body)
         else:
             st.error("Please upload at least one file to generate metrics and send the report.")
     else:
         st.error("Please enter a valid email address.")
 
-# Updated Function to Send Email
+# Function to Send Email
 def send_email_report(recipient_email, email_body):
     # Create the email content
     msg = MIMEMultipart()
@@ -176,10 +163,6 @@ def send_email_report(recipient_email, email_body):
         st.success("Report sent successfully!")
     except Exception as e:
         st.error(f"Failed to send email: {e}")
-
-
-
-        st.error("Please enter a valid email address.")
 
 
 
