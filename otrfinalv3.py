@@ -120,52 +120,51 @@ email_password = "eeoi odag olix nnfc"  # Your app-specific password
 smtp_server = "smtp.gmail.com"
 smtp_port = 587
 
-# Updated Function to Send Email
-def send_email_report(
-    recipient_email, player_avg_bat_speed, top_10_percent_bat_speed, avg_attack_angle_top_10,
-    avg_time_to_contact, exit_velocity_avg, top_8_percent_exit_velocity,
-    avg_launch_angle_top_8, total_avg_launch_angle, avg_distance_top_8, player_level
-):
-    # Access benchmarks for the selected player level
-    bat_speed_benchmark = benchmarks[player_level]["Avg BatSpeed"]
-    top_90_benchmark = benchmarks[player_level]["90th% BatSpeed"]
-    time_to_contact_benchmark = benchmarks[player_level]["Avg TimeToContact"]
-    attack_angle_benchmark = benchmarks[player_level]["Avg AttackAngle"]
-    ev_benchmark = benchmarks[player_level]["Avg EV"]
-    top_8_benchmark = benchmarks[player_level]["Top 8th EV"]
-    la_benchmark = benchmarks[player_level]["Avg LA"]
-    hhb_la_benchmark = benchmarks[player_level]["HHB LA"]
+# Streamlit Email Input and Button
+st.write("## Email the Report")
+recipient_email = st.text_input("Enter Email Address")
 
+if st.button("Send Report"):
+    if recipient_email:
+        # Prepare email content based on available metrics
+        email_body = "<html><body><h2>Baseball Metrics Report</h2><p>Please find the detailed analysis of the uploaded baseball metrics below:</p>"
+
+        if 'player_avg_bat_speed' in locals():
+            email_body += f"""
+            <h3>Bat Speed Metrics</h3>
+            <p>Average Bat Speed: {player_avg_bat_speed:.2f} mph (Level Average: {bat_speed_benchmark} mph)<br>
+            Top 10% Bat Speed: {top_10_percent_bat_speed:.2f} mph (Level Average: {top_90_benchmark} mph)<br>
+            Average Attack Angle (Top 10% Bat Speed Swings): {avg_attack_angle_top_10:.2f}° (Level Average: {attack_angle_benchmark}°)<br>
+            Average Time to Contact: {avg_time_to_contact:.3f} sec (Level Average: {time_to_contact_benchmark} sec)</p>
+            """
+        
+        if 'exit_velocity_avg' in locals():
+            email_body += f"""
+            <h3>Exit Velocity Metrics</h3>
+            <p>Average Exit Velocity: {exit_velocity_avg:.2f} mph (Level Average: {ev_benchmark} mph)<br>
+            Top 8% Exit Velocity: {top_8_percent_exit_velocity:.2f} mph (Level Average: {top_8_benchmark} mph)<br>
+            Average Launch Angle (On Top 8% Exit Velocity Swings): {avg_launch_angle_top_8:.2f}° (Level Average: {hhb_la_benchmark}°)<br>
+            Total Average Launch Angle (Avg LA): {total_avg_launch_angle:.2f}° (Level Average: {la_benchmark}°)<br>
+            Average Distance (8% swings): {avg_distance_top_8:.2f} ft</p>
+            """
+
+        email_body += "<p>Best Regards,<br>Your Baseball Metrics Analyzer</p></body></html>"
+
+        # Send the email if any metrics are available
+        if 'player_avg_bat_speed' in locals() or 'exit_velocity_avg' in locals():
+            send_email_report(recipient_email, email_body)
+        else:
+            st.error("Please upload at least one file to generate metrics and send the report.")
+    else:
+        st.error("Please enter a valid email address.")
+
+# Updated Function to Send Email
+def send_email_report(recipient_email, email_body):
     # Create the email content
     msg = MIMEMultipart()
     msg['From'] = email_address
     msg['To'] = recipient_email
     msg['Subject'] = "Baseball Metrics Report"
-
-    # Construct the email body with a professional layout
-    email_body = f"""
-    <html>
-    <body>
-        <h2>Baseball Metrics Report</h2>
-        <p>Please find the detailed analysis of the uploaded baseball metrics below:</p>
-
-        <h3>Bat Speed Metrics</h3>
-        <p>Average Bat Speed: {player_avg_bat_speed:.2f} mph (Level Average: {bat_speed_benchmark} mph)<br>
-        Top 10% Bat Speed: {top_10_percent_bat_speed:.2f} mph (Level Average: {top_90_benchmark} mph)<br>
-        Average Attack Angle (Top 10% Bat Speed Swings): {avg_attack_angle_top_10:.2f}° (Level Average: {attack_angle_benchmark}°)<br>
-        Average Time to Contact: {avg_time_to_contact:.3f} sec (Level Average: {time_to_contact_benchmark} sec)</p>
-
-        <h3>Exit Velocity Metrics</h3>
-        <p>Average Exit Velocity: {exit_velocity_avg:.2f} mph (Level Average: {ev_benchmark} mph)<br>
-        Top 8% Exit Velocity: {top_8_percent_exit_velocity:.2f} mph (Level Average: {top_8_benchmark} mph)<br>
-        Average Launch Angle (On Top 8% Exit Velocity Swings): {avg_launch_angle_top_8:.2f}° (Level Average: {hhb_la_benchmark}°)<br>
-        Total Average Launch Angle (Avg LA): {total_avg_launch_angle:.2f}° (Level Average: {la_benchmark}°)<br>
-        Average Distance (8% swings): {avg_distance_top_8:.2f} ft</p>
-
-        <p>Best Regards,<br>Your Baseball Metrics Analyzer</p>
-    </body>
-    </html>
-    """
     msg.attach(MIMEText(email_body, 'html'))
 
     # Send the email
@@ -178,18 +177,8 @@ def send_email_report(
     except Exception as e:
         st.error(f"Failed to send email: {e}")
 
-# Streamlit Email Input and Button
-st.write("## Email the Report")
-recipient_email = st.text_input("Enter Email Address")
-if st.button("Send Report"):
-    if recipient_email:
-        send_email_report(
-            recipient_email, player_avg_bat_speed, top_10_percent_bat_speed,
-            avg_attack_angle_top_10, avg_time_to_contact, exit_velocity_avg,
-            top_8_percent_exit_velocity, avg_launch_angle_top_8,
-            total_avg_launch_angle, avg_distance_top_8, player_level
-        )
-    else:
+
+
         st.error("Please enter a valid email address.")
 
 
