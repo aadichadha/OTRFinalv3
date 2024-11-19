@@ -39,6 +39,15 @@ benchmarks = {
     }
 }
 
+# Function to determine performance category
+def evaluate_performance(metric, benchmark):
+    if abs(metric - benchmark) <= 0.1 * benchmark:
+        return "Above Average"
+    elif abs(metric - benchmark) <= 0.2 * benchmark:
+        return "Average"
+    else:
+        return "Below Average"
+
 # Process Bat Speed File (Skip the first 8 rows)
 bat_speed_metrics = ""
 if bat_speed_file:
@@ -115,14 +124,8 @@ if exit_velocity_metrics:
     st.markdown(exit_velocity_metrics)
 
 # Email Configuration
-email_address = "aadichadha@gmail.com"  # Your email address
-email_password = "eeoi odag olix nnfc"  # Your app-specific password
-smtp_server = "smtp.gmail.com"
-smtp_port = 587
-
-# Email Configuration
-email_address = "aadichadha@gmail.com"  # Your email address
-email_password = "eeoi odag olix nnfc"  # Your app-specific password
+email_address = "aadichadha@gmail.com"
+email_password = "eeoi odag olix nnfc"
 smtp_server = "smtp.gmail.com"
 smtp_port = 587
 
@@ -132,26 +135,19 @@ recipient_email = st.text_input("Enter Email Address")
 
 if st.button("Send Report"):
     if recipient_email:
-        # Function to determine performance category
-        def evaluate_performance(metric, benchmark):
-            if abs(metric - benchmark) <= 0.1 * benchmark:
-                return "Above Average"
-            elif abs(metric - benchmark) <= 0.2 * benchmark:
-                return "Average"
-            else:
-                return "Below Average"
-
         # Prepare email content based on available metrics
         email_body = "<html><body><h2>Baseball Metrics Report</h2><p>Please find the detailed analysis of the uploaded baseball metrics below:</p>"
 
         if bat_speed_metrics:
+            email_body += f"<h3>Bat Speed Metrics</h3><p
+            email_body += f"{bat_speed_metrics.replace('### ', '').replace('\\n', '<br>')}</p>"
+
             # Evaluate Bat Speed performance
             bat_speed_eval = evaluate_performance(player_avg_bat_speed, bat_speed_benchmark)
             top_10_bat_speed_eval = evaluate_performance(top_10_percent_bat_speed, top_90_benchmark)
             attack_angle_eval = evaluate_performance(avg_attack_angle_top_10, attack_angle_benchmark)
             time_to_contact_eval = evaluate_performance(avg_time_to_contact, time_to_contact_benchmark)
 
-            email_body += f"<h3>Bat Speed Metrics</h3><p>{bat_speed_metrics.replace('### ', '').replace('\\n', '<br>')}</p>"
             email_body += (
                 f"<h4>Today's Results:</h4>"
                 f"<p>Player Average Bat Speed: {bat_speed_eval}<br>"
@@ -161,13 +157,14 @@ if st.button("Send Report"):
             )
 
         if exit_velocity_metrics:
+            email_body += f"<h3>Exit Velocity Metrics</h3><p>{exit_velocity_metrics.replace('### ', '').replace('\\n', '<br>')}</p>"
+
             # Evaluate Exit Velocity performance
             ev_eval = evaluate_performance(exit_velocity_avg, ev_benchmark)
             top_8_ev_eval = evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark)
             avg_la_eval = evaluate_performance(total_avg_launch_angle, la_benchmark)
             hhb_la_eval = evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark)
 
-            email_body += f"<h3>Exit Velocity Metrics</h3><p>{exit_velocity_metrics.replace('### ', '').replace('\\n', '<br>')}</p>"
             email_body += (
                 f"<h4>Today's Results:</h4>"
                 f"<p>Average Exit Velocity: {ev_eval}<br>"
@@ -204,4 +201,3 @@ def send_email_report(recipient_email, email_body):
         st.success("Report sent successfully!")
     except Exception as e:
         st.error(f"Failed to send email: {e}")
-
