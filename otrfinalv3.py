@@ -173,3 +173,22 @@ if st.button("Send Report"):
             )
 
         email_body += "<p>Best Regards,<br>Your Baseball Metrics Analyzer</p></body></html>"
+        # Function to Send Email
+def send_email_report(recipient_email, email_body):
+    # Create the email content
+    msg = MIMEMultipart()
+    msg['From'] = email_address
+    msg['To'] = recipient_email
+    msg['Subject'] = "Baseball Metrics Report"
+    msg.attach(MIMEText(email_body, 'html'))
+
+    # Send the email
+    try:
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(email_address, email_password)
+            server.send_message(msg)
+        st.success("Report sent successfully!")
+    except Exception as e:
+        st.error(f"Failed to send email: {e}")
+
