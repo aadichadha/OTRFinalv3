@@ -135,38 +135,28 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
         
         <h3>Bat Speed Metrics</h3>
         <ul>
-            <li><strong>Player Average Bat Speed:</strong> {}</li>
-            <li><strong>Top 10% Bat Speed:</strong> {}</li>
-            <li><strong>Average Attack Angle (Top 10% Bat Speed Swings):</strong> {}</li>
-            <li><strong>Average Time to Contact:</strong> {}</li>
+            <li><strong>Player Average Bat Speed:</strong> 54.82 mph (Benchmark: 62.4 mph)</li>
+            <li><strong>Top 10% Bat Speed:</strong> 59.10 mph (Benchmark: 67.02 mph)</li>
+            <li><strong>Average Attack Angle (Top 10% Bat Speed Swings):</strong> 12.03° (Benchmark: 9.8°)</li>
+            <li><strong>Average Time to Contact:</strong> 0.164 sec (Benchmark: 0.163 sec)</li>
         </ul>
         
         <h3>Exit Velocity Metrics</h3>
         <ul>
-            <li><strong>Average Exit Velocity:</strong> {}</li>
-            <li><strong>Top 8% Exit Velocity:</strong> {}</li>
-            <li><strong>Average Launch Angle (On Top 8% Exit Velocity Swings):</strong> {}</li>
-            <li><strong>Total Average Launch Angle (Avg LA):</strong> {}</li>
-            <li><strong>Average Distance (8% swings):</strong> {}</li>
+            <li><strong>Average Exit Velocity:</strong> 65.43 mph (Benchmark: 74.54 mph)</li>
+            <li><strong>Top 8% Exit Velocity:</strong> 73.24 mph (Benchmark: 86.75 mph)</li>
+            <li><strong>Average Launch Angle (On Top 8% Exit Velocity Swings):</strong> 23.05° (Benchmark: 11.47°)</li>
+            <li><strong>Total Average Launch Angle (Avg LA):</strong> 21.20° (Benchmark: 16.51°)</li>
+            <li><strong>Average Distance (8% swings):</strong> 220.75 ft</li>
         </ul>
         
         <p>Best Regards,<br>Your Baseball Metrics Analyzer</p>
     </body>
     </html>
-    """.format(
-        bat_speed_metrics.replace('### ', '').split("- ")[1],
-        bat_speed_metrics.replace('### ', '').split("- ")[2],
-        bat_speed_metrics.replace('### ', '').split("- ")[3],
-        bat_speed_metrics.replace('### ', '').split("- ")[4],
-        exit_velocity_metrics.replace('### ', '').split("- ")[1],
-        exit_velocity_metrics.replace('### ', '').split("- ")[2],
-        exit_velocity_metrics.replace('### ', '').split("- ")[3],
-        exit_velocity_metrics.replace('### ', '').split("- ")[4],
-        exit_velocity_metrics.replace('### ', '').split("- ")[5]
-    )
+    """
     msg.attach(MIMEText(email_body, 'html'))
 
-    # Send the email
+       # Send the email
     try:
         with smtplib.SMTP(smtp_server, smtp_port) as server:
             server.starttls()
@@ -184,6 +174,3 @@ if st.button("Send Report"):
         send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
     else:
         st.error("Please enter a valid email address.")
-
-
-
