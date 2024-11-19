@@ -123,6 +123,13 @@ if bat_speed_metrics:
 if exit_velocity_metrics:
     st.markdown(exit_velocity_metrics)
 
+# Display Results
+st.write("## Calculated Metrics")
+if bat_speed_metrics:
+    st.markdown(bat_speed_metrics)
+if exit_velocity_metrics:
+    st.markdown(exit_velocity_metrics)
+
 # Email Configuration
 email_address = "aadichadha@gmail.com"
 email_password = "eeoi odag olix nnfc"
@@ -173,7 +180,16 @@ if st.button("Send Report"):
             )
 
         email_body += "<p>Best Regards,<br>Your Baseball Metrics Analyzer</p></body></html>"
-        # Function to Send Email
+
+        # Send the email if any metrics are available
+        if bat_speed_metrics or exit_velocity_metrics:
+            send_email_report(recipient_email, email_body)
+        else:
+            st.error("Please upload at least one file to generate metrics and send the report.")
+    else:
+        st.error("Please enter a valid email address.")
+
+# Function to Send Email
 def send_email_report(recipient_email, email_body):
     # Create the email content
     msg = MIMEMultipart()
@@ -191,4 +207,3 @@ def send_email_report(recipient_email, email_body):
         st.success("Report sent successfully!")
     except Exception as e:
         st.error(f"Failed to send email: {e}")
-
