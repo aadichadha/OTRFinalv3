@@ -77,7 +77,6 @@ if bat_speed_file:
         f"- **Average Attack Angle (Top 10% Bat Speed Swings):** {avg_attack_angle_top_10:.2f}° (Benchmark: {attack_angle_benchmark}°)\n"
         f"- **Average Time to Contact:** {avg_time_to_contact:.3f} sec (Benchmark: {time_to_contact_benchmark} sec)\n"
     )
-
 # Process Exit Velocity File (No rows skipped)
 exit_velocity_metrics = ""
 if exit_velocity_file:
@@ -200,3 +199,5 @@ def send_email_report(recipient_email, email_body):
         st.success("Report sent successfully!")
     except Exception as e:
         st.error(f"Failed to send email: {e}")
+
+
