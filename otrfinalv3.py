@@ -135,69 +135,41 @@ recipient_email = st.text_input("Enter Email Address")
 
 if st.button("Send Report"):
     if recipient_email:
-        # Prepare email content based on available metrics
-        email_body = "<html><body><h2>Baseball Metrics Report</h2><p>Please find the detailed analysis of the uploaded baseball metrics below:</p>"
+# Prepare email content based on available metrics
+email_body = "<html><body><h2>Baseball Metrics Report</h2><p>Please find the detailed analysis of the uploaded baseball metrics below:</p>"
 
-        if bat_speed_metrics:
-            email_body += f"<h3>Bat Speed Metrics</h3><p
-            email_body += f"{bat_speed_metrics.replace('### ', '').replace('\\n', '<br>')}</p>"
+if bat_speed_metrics:
+    email_body += f"<h3>Bat Speed Metrics</h3><p>{bat_speed_metrics.replace('### ', '').replace('\\n', '<br>')}</p>"
 
-            # Evaluate Bat Speed performance
-            bat_speed_eval = evaluate_performance(player_avg_bat_speed, bat_speed_benchmark)
-            top_10_bat_speed_eval = evaluate_performance(top_10_percent_bat_speed, top_90_benchmark)
-            attack_angle_eval = evaluate_performance(avg_attack_angle_top_10, attack_angle_benchmark)
-            time_to_contact_eval = evaluate_performance(avg_time_to_contact, time_to_contact_benchmark)
+    # Evaluate Bat Speed performance
+    bat_speed_eval = evaluate_performance(player_avg_bat_speed, bat_speed_benchmark)
+    top_10_bat_speed_eval = evaluate_performance(top_10_percent_bat_speed, top_90_benchmark)
+    attack_angle_eval = evaluate_performance(avg_attack_angle_top_10, attack_angle_benchmark)
+    time_to_contact_eval = evaluate_performance(avg_time_to_contact, time_to_contact_benchmark)
 
-            email_body += (
-                f"<h4>Today's Results:</h4>"
-                f"<p>Player Average Bat Speed: {bat_speed_eval}<br>"
-                f"Top 10% Bat Speed: {top_10_bat_speed_eval}<br>"
-                f"Average Attack Angle (Top 10% Swings): {attack_angle_eval}<br>"
-                f"Average Time to Contact: {time_to_contact_eval}</p>"
-            )
+    email_body += (
+        f"<h4>Today's Results:</h4>"
+        f"<p>Player Average Bat Speed: {bat_speed_eval}<br>"
+        f"Top 10% Bat Speed: {top_10_bat_speed_eval}<br>"
+        f"Average Attack Angle (Top 10% Swings): {attack_angle_eval}<br>"
+        f"Average Time to Contact: {time_to_contact_eval}</p>"
+    )
 
-        if exit_velocity_metrics:
-            email_body += f"<h3>Exit Velocity Metrics</h3><p>{exit_velocity_metrics.replace('### ', '').replace('\\n', '<br>')}</p>"
+if exit_velocity_metrics:
+    email_body += f"<h3>Exit Velocity Metrics</h3><p>{exit_velocity_metrics.replace('### ', '').replace('\\n', '<br>')}</p>"
 
-            # Evaluate Exit Velocity performance
-            ev_eval = evaluate_performance(exit_velocity_avg, ev_benchmark)
-            top_8_ev_eval = evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark)
-            avg_la_eval = evaluate_performance(total_avg_launch_angle, la_benchmark)
-            hhb_la_eval = evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark)
+    # Evaluate Exit Velocity performance
+    ev_eval = evaluate_performance(exit_velocity_avg, ev_benchmark)
+    top_8_ev_eval = evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark)
+    avg_la_eval = evaluate_performance(total_avg_launch_angle, la_benchmark)
+    hhb_la_eval = evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark)
 
-            email_body += (
-                f"<h4>Today's Results:</h4>"
-                f"<p>Average Exit Velocity: {ev_eval}<br>"
-                f"Top 8% Exit Velocity: {top_8_ev_eval}<br>"
-                f"Total Average Launch Angle: {avg_la_eval}<br>"
-                f"Average Launch Angle (Top 8% Swings): {hhb_la_eval}</p>"
-            )
+    email_body += (
+        f"<h4>Today's Results:</h4>"
+        f"<p>Average Exit Velocity: {ev_eval}<br>"
+        f"Top 8% Exit Velocity: {top_8_ev_eval}<br>"
+        f"Total Average Launch Angle: {avg_la_eval}<br>"
+        f"Average Launch Angle (Top 8% Swings): {hhb_la_eval}</p>"
+    )
 
-        email_body += "<p>Best Regards,<br>Your Baseball Metrics Analyzer</p></body></html>"
-
-        # Send the email if any metrics are available
-        if bat_speed_metrics or exit_velocity_metrics:
-            send_email_report(recipient_email, email_body)
-        else:
-            st.error("Please upload at least one file to generate metrics and send the report.")
-    else:
-        st.error("Please enter a valid email address.")
-
-# Function to Send Email
-def send_email_report(recipient_email, email_body):
-    # Create the email content
-    msg = MIMEMultipart()
-    msg['From'] = email_address
-    msg['To'] = recipient_email
-    msg['Subject'] = "Baseball Metrics Report"
-    msg.attach(MIMEText(email_body, 'html'))
-
-    # Send the email
-    try:
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.starttls()
-            server.login(email_address, email_password)
-            server.send_message(msg)
-        st.success("Report sent successfully!")
-    except Exception as e:
-        st.error(f"Failed to send email: {e}")
+email_body += "<p>Best Regards,<br>Your Baseball Metrics Analyzer</p></body></html>"
