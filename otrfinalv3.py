@@ -1,3 +1,9 @@
+import streamlit as st
+import pandas as pd
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 # Title and Introduction
 st.title("OTR Baseball Metrics Analyzer")
 st.write("Upload your Bat Speed and Exit Velocity CSV files to generate a comprehensive report.")
@@ -32,7 +38,6 @@ benchmarks = {
         "Avg BatSpeed": 70.17, "90th% BatSpeed": 75.14, "Avg TimeToContact": 0.147, "Avg AttackAngle": 11.09
     }
 }
-
 # Process Bat Speed File (Skip the first 8 rows)
 bat_speed_metrics = ""
 if bat_speed_file:
@@ -100,7 +105,6 @@ if exit_velocity_file:
         f"- **Total Average Launch Angle (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
         f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
     )
-
 # Display Results
 st.write("## Calculated Metrics")
 if bat_speed_metrics:
@@ -130,54 +134,3 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
         <p>Please find the detailed analysis of the uploaded baseball metrics below:</p>
         
         <h3>Bat Speed Metrics</h3>
-        <ul>
-            <li><strong>Player Average Bat Speed:</strong> {}</li>
-            <li><strong>Top 10% Bat Speed:</strong> {}</li>
-            <li><strong>Average Attack Angle (Top 10% Bat Speed Swings):</strong> {}</li>
-            <li><strong>Average Time to Contact:</strong> {}</li>
-        </ul>
-        
-        <h3>Exit Velocity Metrics</h3>
-        <ul>
-            <li><strong>Average Exit Velocity:</strong> {}</li>
-            <li><strong>Top 8% Exit Velocity:</strong> {}</li>
-            <li><strong>Average Launch Angle (On Top 8% Exit Velocity Swings):</strong> {}</li>
-            <li><strong>Total Average Launch Angle (Avg LA):</strong> {}</li>
-            <li><strong>Average Distance (8% swings):</strong> {}</li>
-        </ul>
-        
-        <p>Best Regards,<br>Your Baseball Metrics Analyzer</p>
-    </body>
-    </html>
-    """.format(
-        bat_speed_metrics.replace('### ', '').split("- ")[1],
-        bat_speed_metrics.replace('### ', '').split("- ")[2],
-        bat_speed_metrics.replace('### ', '').split("- ")[3],
-        bat_speed_metrics.replace('### ', '').split("- ")[4],
-        exit_velocity_metrics.replace('### ', '').split("- ")[1],
-        exit_velocity_metrics.replace('### ', '').split("- ")[2],
-        exit_velocity_metrics.replace('### ', '').split("- ")[3],
-        exit_velocity_metrics.replace('### ', '').split("- ")[4],
-        exit_velocity_metrics.replace('### ', '').split("- ")[5]
-    )
-
-    msg.attach(MIMEText(email_body, 'html'))
-
-    # Send the email
-    try:
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.starttls()
-            server.login(email_address, email_password)
-            server.send_message(msg)
-        st.success("Report sent successfully!")
-    except Exception as e:
-        st.error(f"Failed to send email: {e}")
-
-# Streamlit Email Input and Button
-st.write("## Email the Report")
-recipient_email = st.text_input("Enter Email Address")
-if st.button("Send Report"):
-    if recipient_email:
-        send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
-    else:
-        st.error("Please enter a valid email address.")
