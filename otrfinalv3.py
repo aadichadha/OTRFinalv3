@@ -147,25 +147,56 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
     msg = MIMEMultipart()
     msg['From'] = email_address
     msg['To'] = recipient_email
-    msg['Subject'] = "Baseball Metrics Report"
+    msg['Subject'] = "OTR Baseball Metrics and Grade Report"
 
-    # Construct the email body with organized layout
-    email_body = f"""
+    # Construct the email body with organized layout and player grades
+    email_body = """
     <html>
     <body>
-        <h2>Baseball Metrics Report</h2>
-        <p>Please find the detailed analysis of the uploaded baseball metrics below:</p>
-
+        <h2>OTR Metrics Report</h2>
+        <p>The following data is constructed with benchmarks for each level. </p>
+        
         <h3>Bat Speed Metrics</h3>
-        <p>{bat_speed_metrics.replace('### ', '').replace('\\n', '<br>')}</p>
-
+        <ul>
+            <li><strong>Player Average Bat Speed:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
+                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
+            <li><strong>Top 10% Bat Speed:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
+                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
+            <li><strong>Average Attack Angle (Top 10% Bat Speed Swings):</strong> {:.2f}° (Benchmark: {:.2f}°)
+                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
+            <li><strong>Average Time to Contact:</strong> {:.3f} sec (Benchmark: {:.3f} sec)
+                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
+        </ul>
+    """.format(
+        player_avg_bat_speed, bat_speed_benchmark, evaluate_performance(player_avg_bat_speed, bat_speed_benchmark),
+        top_10_percent_bat_speed, top_90_benchmark, evaluate_performance(top_10_percent_bat_speed, top_90_benchmark),
+        avg_attack_angle_top_10, attack_angle_benchmark, evaluate_performance(avg_attack_angle_top_10, attack_angle_benchmark),
+        avg_time_to_contact, time_to_contact_benchmark, evaluate_performance(avg_time_to_contact, time_to_contact_benchmark)
+    )
+    email_body += """
         <h3>Exit Velocity Metrics</h3>
-        <p>{exit_velocity_metrics.replace('### ', '').replace('\\n', '<br>')}</p>
-
-        <p>Best Regards,<br>Your Baseball Metrics Analyzer</p>
+        <ul>
+            <li><strong>Average Exit Velocity:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
+                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
+            <li><strong>Top 8% Exit Velocity:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
+                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
+            <li><strong>Average Launch Angle (On Top 8% Exit Velocity Swings):</strong> {:.2f}° (Benchmark: {:.2f}°)
+                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
+            <li><strong>Total Average Launch Angle (Avg LA):</strong> {:.2f}° (Benchmark: {:.2f}°)
+                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
+            <li><strong>Average Distance (8% swings):</strong> {:.2f} ft</li>
+        </ul>
+        <p>Best Regards,<br>OTR Baseball</p>
     </body>
     </html>
-    """
+    """.format(
+        exit_velocity_avg, ev_benchmark, evaluate_performance(exit_velocity_avg, ev_benchmark),
+        top_8_percent_exit_velocity, top_8_benchmark, evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark),
+        avg_launch_angle_top_8, hhb_la_benchmark, evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark),
+        total_avg_launch_angle, la_benchmark, evaluate_performance(total_avg_launch_angle, la_benchmark),
+        avg_distance_top_8
+    )
+
     msg.attach(MIMEText(email_body, 'html'))
 
     # Send the email
@@ -177,14 +208,3 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
         st.success("Report sent successfully!")
     except Exception as e:
         st.error(f"Failed to send email: {e}")
-
-# Streamlit Email Input and Button
-st.write("## Email the Report")
-recipient_email = st.text_input("Enter Email Address")
-if st.button("Send Report"):
-    if recipient_email:
-        send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
-    else:
-        st.error("Please enter a valid email address.")
-
-
