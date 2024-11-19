@@ -123,13 +123,6 @@ if bat_speed_metrics:
 if exit_velocity_metrics:
     st.markdown(exit_velocity_metrics)
 
-# Display Results
-st.write("## Calculated Metrics")
-if bat_speed_metrics:
-    st.markdown(bat_speed_metrics)
-if exit_velocity_metrics:
-    st.markdown(exit_velocity_metrics)
-
 # Email Configuration
 email_address = "aadichadha@gmail.com"
 email_password = "eeoi odag olix nnfc"
@@ -181,7 +174,7 @@ if st.button("Send Report"):
 
         email_body += "<p>Best Regards,<br>Your Baseball Metrics Analyzer</p></body></html>"
 
-        # Send the email if any metrics are available
+        # Send the email if metrics are available
         if bat_speed_metrics or exit_velocity_metrics:
             send_email_report(recipient_email, email_body)
         else:
