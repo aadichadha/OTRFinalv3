@@ -38,6 +38,23 @@ benchmarks = {
         "Avg BatSpeed": 70.17, "90th% BatSpeed": 75.14, "Avg TimeToContact": 0.147, "Avg AttackAngle": 11.09
     }
 }
+# Function to determine performance category
+def evaluate_performance(metric, benchmark):
+    if abs(metric - benchmark) <= 0.1 * benchmark:
+        return "Above Average"
+    elif abs(metric - benchmark) <= 0.2 * benchmark:
+        return "Average"
+    else:
+        return "Below Average"
+
+# Function to add Player Grade
+def player_grade(metric, benchmark):
+    if abs(metric - benchmark) <= 0.1 * benchmark:
+        return "Above Average"
+    elif abs(metric - benchmark) <= 0.2 * benchmark:
+        return "Average"
+    else:
+        return "Below Average"
 # Process Bat Speed File (Skip the first 8 rows)
 bat_speed_metrics = ""
 if bat_speed_file:
@@ -49,8 +66,7 @@ if bat_speed_file:
     # Calculate Bat Speed Metrics
     player_avg_bat_speed = bat_speed_data.mean()
     top_10_percent_bat_speed = bat_speed_data.quantile(0.90)
-    top_10_percent_swings = df_bat_speed[bat_speed_data >= top_10_percent_bat_speed]
-    avg_attack_angle_top_10 = attack_angle_data[top_10_percent_swings.index].mean()
+    avg_attack_angle_top_10 = attack_angle_data[bat_speed_data >= top_10_percent_bat_speed].mean()
     avg_time_to_contact = time_to_contact_data.mean()
 
     # Benchmarks for Bat Speed, Time to Contact, and Attack Angle
@@ -63,11 +79,14 @@ if bat_speed_file:
     bat_speed_metrics = (
         "### Bat Speed Metrics\n"
         f"- **Player Average Bat Speed:** {player_avg_bat_speed:.2f} mph (Benchmark: {bat_speed_benchmark} mph)\n"
+        f"  - Player Grade: {player_grade(player_avg_bat_speed, bat_speed_benchmark)}\n"
         f"- **Top 10% Bat Speed:** {top_10_percent_bat_speed:.2f} mph (Benchmark: {top_90_benchmark} mph)\n"
+        f"  - Player Grade: {player_grade(top_10_percent_bat_speed, top_90_benchmark)}\n"
         f"- **Average Attack Angle (Top 10% Bat Speed Swings):** {avg_attack_angle_top_10:.2f}° (Benchmark: {attack_angle_benchmark}°)\n"
+        f"  - Player Grade: {player_grade(avg_attack_angle_top_10, attack_angle_benchmark)}\n"
         f"- **Average Time to Contact:** {avg_time_to_contact:.3f} sec (Benchmark: {time_to_contact_benchmark} sec)\n"
+        f"  - Player Grade: {player_grade(avg_time_to_contact, time_to_contact_benchmark)}\n"
     )
-
 # Process Exit Velocity File (No rows skipped)
 exit_velocity_metrics = ""
 if exit_velocity_file:
@@ -83,12 +102,11 @@ if exit_velocity_file:
     distance_data = pd.to_numeric(non_zero_ev_rows.iloc[:, 9], errors='coerce')  # Filtered "Dist"
 
     # Calculate Exit Velocity Metrics
-    exit_velocity_avg = exit_velocity_data.mean()  # Use filtered data
+    exit_velocity_avg = exit_velocity_data.mean()
     top_8_percent_exit_velocity = exit_velocity_data.quantile(0.92)
-    top_8_percent_swings = non_zero_ev_rows[exit_velocity_data >= top_8_percent_exit_velocity]
-    avg_launch_angle_top_8 = launch_angle_data[top_8_percent_swings.index].mean()
-    avg_distance_top_8 = distance_data[top_8_percent_swings.index].mean()
-    total_avg_launch_angle = launch_angle_data[launch_angle_data > 0].mean()  # Total average launch angle ignoring zeros
+    avg_launch_angle_top_8 = launch_angle_data[exit_velocity_data >= top_8_percent_exit_velocity].mean()
+    avg_distance_top_8 = distance_data[exit_velocity_data >= top_8_percent_exit_velocity].mean()
+    total_avg_launch_angle = launch_angle_data[launch_angle_data > 0].mean()
 
     # Benchmarks for Exit Velocity, Avg LA, and HHB LA
     ev_benchmark = benchmarks[player_level]["Avg EV"]
@@ -100,11 +118,16 @@ if exit_velocity_file:
     exit_velocity_metrics = (
         "### Exit Velocity Metrics\n"
         f"- **Average Exit Velocity:** {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)\n"
+        f"  - Player Grade: {player_grade(exit_velocity_avg, ev_benchmark)}\n"
         f"- **Top 8% Exit Velocity:** {top_8_percent_exit_velocity:.2f} mph (Benchmark: {top_8_benchmark} mph)\n"
+        f"  - Player Grade: {player_grade(top_8_percent_exit_velocity, top_8_benchmark)}\n"
         f"- **Average Launch Angle (On Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
+        f"  - Player Grade: {player_grade(avg_launch_angle_top_8, hhb_la_benchmark)}\n"
         f"- **Total Average Launch Angle (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
+        f"  - Player Grade: {player_grade(total_avg_launch_angle, la_benchmark)}\n"
         f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
     )
+
 # Display Results
 st.write("## Calculated Metrics")
 if bat_speed_metrics:
@@ -127,36 +150,25 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
     msg['Subject'] = "Baseball Metrics Report"
 
     # Construct the email body with organized layout
-    email_body = """
+    email_body = f"""
     <html>
     <body>
         <h2>Baseball Metrics Report</h2>
         <p>Please find the detailed analysis of the uploaded baseball metrics below:</p>
-        
+
         <h3>Bat Speed Metrics</h3>
-        <ul>
-            <li><strong>Player Average Bat Speed:</strong> 54.82 mph (Benchmark: 62.4 mph)</li>
-            <li><strong>Top 10% Bat Speed:</strong> 59.10 mph (Benchmark: 67.02 mph)</li>
-            <li><strong>Average Attack Angle (Top 10% Bat Speed Swings):</strong> 12.03° (Benchmark: 9.8°)</li>
-            <li><strong>Average Time to Contact:</strong> 0.164 sec (Benchmark: 0.163 sec)</li>
-        </ul>
-        
+        <p>{bat_speed_metrics.replace('### ', '').replace('\\n', '<br>')}</p>
+
         <h3>Exit Velocity Metrics</h3>
-        <ul>
-            <li><strong>Average Exit Velocity:</strong> 65.43 mph (Benchmark: 74.54 mph)</li>
-            <li><strong>Top 8% Exit Velocity:</strong> 73.24 mph (Benchmark: 86.75 mph)</li>
-            <li><strong>Average Launch Angle (On Top 8% Exit Velocity Swings):</strong> 23.05° (Benchmark: 11.47°)</li>
-            <li><strong>Total Average Launch Angle (Avg LA):</strong> 21.20° (Benchmark: 16.51°)</li>
-            <li><strong>Average Distance (8% swings):</strong> 220.75 ft</li>
-        </ul>
-        
+        <p>{exit_velocity_metrics.replace('### ', '').replace('\\n', '<br>')}</p>
+
         <p>Best Regards,<br>Your Baseball Metrics Analyzer</p>
     </body>
     </html>
     """
     msg.attach(MIMEText(email_body, 'html'))
 
-       # Send the email
+    # Send the email
     try:
         with smtplib.SMTP(smtp_server, smtp_port) as server:
             server.starttls()
@@ -174,3 +186,5 @@ if st.button("Send Report"):
         send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
     else:
         st.error("Please enter a valid email address.")
+
+
