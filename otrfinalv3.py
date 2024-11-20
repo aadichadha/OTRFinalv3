@@ -43,16 +43,16 @@ def evaluate_performance(metric, benchmark, lower_is_better=False):
     if lower_is_better:
         if metric < benchmark:  # Lower values are better
             return "Above Average"
-        elif metric <= benchmark * 1.1:  # 10% higher or less is considered "Average"
+        elif metric <= benchmark * 1.1:  # Up to 10% higher is considered "Average"
             return "Average"
-        else:
+        else:  # More than 10% higher is "Below Average"
             return "Below Average"
     else:
         if metric > benchmark:  # Higher values are better
             return "Above Average"
-        elif metric >= benchmark * 0.9:  # 10% lower or less is considered "Average"
+        elif metric >= benchmark * 0.9:  # Up to 10% lower is considered "Average"
             return "Average"
-        else:
+        else:  # More than 10% lower is "Below Average"
             return "Below Average"
 
 # Function to add Player Grade
@@ -60,20 +60,18 @@ def player_grade(metric, benchmark, lower_is_better=False):
     if lower_is_better:
         if metric < benchmark:  # Lower values are better
             return "Above Average"
-        elif metric <= benchmark * 1.1:  # 10% higher or less is considered "Average"
+        elif metric <= benchmark * 1.1:  # Up to 10% higher is considered "Average"
             return "Average"
-        else:
+        else:  # More than 10% higher is "Below Average"
             return "Below Average"
     else:
         if metric > benchmark:  # Higher values are better
             return "Above Average"
-        elif metric >= benchmark * 0.9:  # 10% lower or less is considered "Average"
+        elif metric >= benchmark * 0.9:  # Up to 10% lower is considered "Average"
             return "Average"
-        else:
+        else:  # More than 10% lower is "Below Average"
             return "Below Average"
-
-
-        
+      
 # Process Bat Speed File (Skip the first 8 rows)
 bat_speed_metrics = ""
 if bat_speed_file:
