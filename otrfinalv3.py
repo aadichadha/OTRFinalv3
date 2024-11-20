@@ -168,27 +168,27 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
     msg['To'] = recipient_email
     msg['Subject'] = "OTR Baseball Metrics and Grade Report"
 
-    # Construct the email body with your formatted layout and white font color
+    # Construct the email body with white background and black text
     email_body = """
     <html>
-    <body style="color: white; background-color: black;">
-        <h2>OTR Metrics Report</h2>
-        <p>The following data is constructed with benchmarks for each level.</p>
+    <body style="color: black; background-color: white;">
+        <h2 style="color: black;">OTR Metrics Report</h2>
+        <p style="color: black;">The following data is constructed with benchmarks for each level.</p>
     """
 
     # Include Bat Speed Metrics if available
     if bat_speed_metrics:
         email_body += """
-        <h3>Bat Speed Metrics</h3>
+        <h3 style="color: black;">Bat Speed Metrics</h3>
         <ul>
-            <li><strong>Player Average Bat Speed:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
-                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
-            <li><strong>Top 10% Bat Speed:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
-                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
-            <li><strong>Average Attack Angle (Top 10% Bat Speed Swings):</strong> {:.2f}° (Benchmark: {:.2f}°)
-                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
-            <li><strong>Average Time to Contact:</strong> {:.3f} sec (Benchmark: {:.3f} sec)
-                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
+            <li style="color: black;"><strong>Player Average Bat Speed:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
+                <br>Player Grade: {}</li>
+            <li style="color: black;"><strong>Top 10% Bat Speed:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
+                <br>Player Grade: {}</li>
+            <li style="color: black;"><strong>Average Attack Angle (Top 10% Bat Speed Swings):</strong> {:.2f}° (Benchmark: {:.2f}°)
+                <br>Player Grade: {}</li>
+            <li style="color: black;"><strong>Average Time to Contact:</strong> {:.3f} sec (Benchmark: {:.3f} sec)
+                <br>Player Grade: {}</li>
         </ul>
         """.format(
             player_avg_bat_speed, bat_speed_benchmark, evaluate_performance(player_avg_bat_speed, bat_speed_benchmark),
@@ -200,17 +200,17 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
     # Include Exit Velocity Metrics if available
     if exit_velocity_metrics:
         email_body += """
-        <h3>Exit Velocity Metrics</h3>
+        <h3 style="color: black;">Exit Velocity Metrics</h3>
         <ul>
-            <li><strong>Average Exit Velocity:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
-                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
-            <li><strong>Top 8% Exit Velocity:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
-                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
-            <li><strong>Average Launch Angle (On Top 8% Exit Velocity Swings):</strong> {:.2f}° (Benchmark: {:.2f}°)
-                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
-            <li><strong>Total Average Launch Angle (Avg LA):</strong> {:.2f}° (Benchmark: {:.2f}°)
-                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
-            <li><strong>Average Distance (8% swings):</strong> {:.2f} ft</li>
+            <li style="color: black;"><strong>Average Exit Velocity:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
+                <br>Player Grade: {}</li>
+            <li style="color: black;"><strong>Top 8% Exit Velocity:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
+                <br>Player Grade: {}</li>
+            <li style="color: black;"><strong>Average Launch Angle (On Top 8% Exit Velocity Swings):</strong> {:.2f}° (Benchmark: {:.2f}°)
+                <br>Player Grade: {}</li>
+            <li style="color: black;"><strong>Total Average Launch Angle (Avg LA):</strong> {:.2f}° (Benchmark: {:.2f}°)
+                <br>Player Grade: {}</li>
+            <li style="color: black;"><strong>Average Distance (8% swings):</strong> {:.2f} ft</li>
         </ul>
         """.format(
             exit_velocity_avg, ev_benchmark, evaluate_performance(exit_velocity_avg, ev_benchmark),
@@ -221,7 +221,7 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
         )
 
     # Close the HTML body
-    email_body += "<p>Best Regards,<br>OTR Baseball</p></body></html>"
+    email_body += "<p style='color: black;'>Best Regards,<br>OTR Baseball</p></body></html>"
 
     msg.attach(MIMEText(email_body, 'html'))
 
@@ -234,8 +234,7 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
         st.success("Report sent successfully!")
     except Exception as e:
         st.error(f"Failed to send email: {e}")
-
-
+        
 # Streamlit Email Input and Button
 st.write("## Email the Report")
 recipient_email = st.text_input("Enter Email Address")
