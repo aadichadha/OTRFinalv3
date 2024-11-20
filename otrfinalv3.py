@@ -168,7 +168,7 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
     msg['To'] = recipient_email
     msg['Subject'] = "OTR Baseball Metrics and Grade Report"
 
-    # Construct the email body with white background and black text
+    # Start the email body with the general introduction
     email_body = """
     <html>
     <body style="color: black; background-color: white;">
@@ -176,7 +176,7 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
         <p style="color: black;">The following data is constructed with benchmarks for each level.</p>
     """
 
-    # Include Bat Speed Metrics if available
+    # Add Bat Speed Metrics if available
     if bat_speed_metrics:
         email_body += """
         <h3 style="color: black;">Bat Speed Metrics</h3>
@@ -197,7 +197,7 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
             avg_time_to_contact, time_to_contact_benchmark, evaluate_performance(avg_time_to_contact, time_to_contact_benchmark)
         )
 
-    # Include Exit Velocity Metrics if available
+    # Add Exit Velocity Metrics if available
     if exit_velocity_metrics:
         email_body += """
         <h3 style="color: black;">Exit Velocity Metrics</h3>
