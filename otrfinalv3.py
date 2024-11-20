@@ -38,29 +38,23 @@ benchmarks = {
         "Avg BatSpeed": 70.17, "90th% BatSpeed": 75.14, "Avg TimeToContact": 0.147, "Avg AttackAngle": 11.09
     }
 }
-
-# Define performance ranges as placeholders; adjust these as needed
-performance_ranges = {
-    "Avg EV": {"above_average": 3, "average": 5, "below_average": 10},
-    "Top 8th EV": {"above_average": 4, "average": 6, "below_average": 12},
-    "Avg LA": {"above_average": 1, "average": 3, "below_average": 5},
-    "HHB LA": {"above_average": 1, "average": 2, "below_average": 4},
-    "Avg BatSpeed": {"above_average": 3, "average": 5, "below_average": 10},
-    "90th% BatSpeed": {"above_average": 3, "average": 5, "below_average": 10},
-    "Avg TimeToContact": {"above_average": 0.01, "average": 0.02, "below_average": 0.03},
-    "Avg AttackAngle": {"above_average": 1, "average": 3, "below_average": 5}
-}
-
-# Function to determine performance category based on defined ranges
-def evaluate_performance(metric, benchmark, metric_type):
-    ranges = performance_ranges[metric_type]
-    if abs(metric - benchmark) <= ranges["above_average"]:
+# Function to determine performance category
+def evaluate_performance(metric, benchmark):
+    if abs(metric - benchmark) <= 0.1 * benchmark:
         return "Above Average"
-    elif abs(metric - benchmark) <= ranges["average"]:
+    elif abs(metric - benchmark) <= 0.2 * benchmark:
         return "Average"
     else:
         return "Below Average"
 
+# Function to add Player Grade
+def player_grade(metric, benchmark):
+    if abs(metric - benchmark) <= 0.1 * benchmark:
+        return "Above Average"
+    elif abs(metric - benchmark) <= 0.2 * benchmark:
+        return "Average"
+    else:
+        return "Below Average"
 # Process Bat Speed File (Skip the first 8 rows)
 bat_speed_metrics = ""
 if bat_speed_file:
@@ -85,15 +79,14 @@ if bat_speed_file:
     bat_speed_metrics = (
         "### Bat Speed Metrics\n"
         f"- **Player Average Bat Speed:** {player_avg_bat_speed:.2f} mph (Benchmark: {bat_speed_benchmark} mph)\n"
-        f"  - Player Grade: {evaluate_performance(player_avg_bat_speed, bat_speed_benchmark, 'Avg BatSpeed')}\n"
+        f"  - Player Grade: {player_grade(player_avg_bat_speed, bat_speed_benchmark)}\n"
         f"- **Top 10% Bat Speed:** {top_10_percent_bat_speed:.2f} mph (Benchmark: {top_90_benchmark} mph)\n"
-        f"  - Player Grade: {evaluate_performance(top_10_percent_bat_speed, top_90_benchmark, '90th% BatSpeed')}\n"
+        f"  - Player Grade: {player_grade(top_10_percent_bat_speed, top_90_benchmark)}\n"
         f"- **Average Attack Angle (Top 10% Bat Speed Swings):** {avg_attack_angle_top_10:.2f}° (Benchmark: {attack_angle_benchmark}°)\n"
-        f"  - Player Grade: {evaluate_performance(avg_attack_angle_top_10, attack_angle_benchmark, 'Avg AttackAngle')}\n"
+        f"  - Player Grade: {player_grade(avg_attack_angle_top_10, attack_angle_benchmark)}\n"
         f"- **Average Time to Contact:** {avg_time_to_contact:.3f} sec (Benchmark: {time_to_contact_benchmark} sec)\n"
-        f"  - Player Grade: {evaluate_performance(avg_time_to_contact, time_to_contact_benchmark, 'Avg TimeToContact')}\n"
+        f"  - Player Grade: {player_grade(avg_time_to_contact, time_to_contact_benchmark)}\n"
     )
-
 # Process Exit Velocity File (No rows skipped)
 exit_velocity_metrics = ""
 if exit_velocity_file:
@@ -118,20 +111,20 @@ if exit_velocity_file:
     # Benchmarks for Exit Velocity, Avg LA, and HHB LA
     ev_benchmark = benchmarks[player_level]["Avg EV"]
     top_8_benchmark = benchmarks[player_level]["Top 8th EV"]
-    la_benchmark =     benchmarks[player_level]["Avg LA"]
+    la_benchmark = benchmarks[player_level]["Avg LA"]
     hhb_la_benchmark = benchmarks[player_level]["HHB LA"]
 
     # Format Exit Velocity Metrics
     exit_velocity_metrics = (
         "### Exit Velocity Metrics\n"
         f"- **Average Exit Velocity:** {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)\n"
-        f"  - Player Grade: {evaluate_performance(exit_velocity_avg, ev_benchmark, 'Avg EV')}\n"
+        f"  - Player Grade: {player_grade(exit_velocity_avg, ev_benchmark)}\n"
         f"- **Top 8% Exit Velocity:** {top_8_percent_exit_velocity:.2f} mph (Benchmark: {top_8_benchmark} mph)\n"
-        f"  - Player Grade: {evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark, 'Top 8th EV')}\n"
+        f"  - Player Grade: {player_grade(top_8_percent_exit_velocity, top_8_benchmark)}\n"
         f"- **Average Launch Angle (On Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
-        f"  - Player Grade: {evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark, 'HHB LA')}\n"
+        f"  - Player Grade: {player_grade(avg_launch_angle_top_8, hhb_la_benchmark)}\n"
         f"- **Total Average Launch Angle (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
-        f"  - Player Grade: {evaluate_performance(total_avg_launch_angle, la_benchmark, 'Avg LA')}\n"
+        f"  - Player Grade: {player_grade(total_avg_launch_angle, la_benchmark)}\n"
         f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
     )
 
@@ -175,10 +168,10 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
                 <br><strong>Player Grade:</strong> <strong>{}</strong></li>
         </ul>
     """.format(
-        player_avg_bat_speed, bat_speed_benchmark, evaluate_performance(player_avg_bat_speed, bat_speed_benchmark, 'Avg BatSpeed'),
-        top_10_percent_bat_speed, top_90_benchmark, evaluate_performance(top_10_percent_bat_speed, top_90_benchmark, '90th% BatSpeed'),
-        avg_attack_angle_top_10, attack_angle_benchmark, evaluate_performance(avg_attack_angle_top_10, attack_angle_benchmark, 'Avg AttackAngle'),
-        avg_time_to_contact, time_to_contact_benchmark, evaluate_performance(avg_time_to_contact, time_to_contact_benchmark, 'Avg TimeToContact')
+        player_avg_bat_speed, bat_speed_benchmark, evaluate_performance(player_avg_bat_speed, bat_speed_benchmark),
+        top_10_percent_bat_speed, top_90_benchmark, evaluate_performance(top_10_percent_bat_speed, top_90_benchmark),
+        avg_attack_angle_top_10, attack_angle_benchmark, evaluate_performance(avg_attack_angle_top_10, attack_angle_benchmark),
+        avg_time_to_contact, time_to_contact_benchmark, evaluate_performance(avg_time_to_contact, time_to_contact_benchmark)
     )
     email_body += """
         <h3>Exit Velocity Metrics</h3>
@@ -197,10 +190,10 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
     </body>
     </html>
     """.format(
-        exit_velocity_avg, ev_benchmark, evaluate_performance(exit_velocity_avg, ev_benchmark, 'Avg EV'),
-        top_8_percent_exit_velocity, top_8_benchmark, evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark, 'Top 8th EV'),
-        avg_launch_angle_top_8, hhb_la_benchmark, evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark, 'HHB LA'),
-        total_avg_launch_angle, la_benchmark, evaluate_performance(total_avg_launch_angle, la_benchmark, 'Avg LA'),
+        exit_velocity_avg, ev_benchmark, evaluate_performance(exit_velocity_avg, ev_benchmark),
+        top_8_percent_exit_velocity, top_8_benchmark, evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark),
+        avg_launch_angle_top_8, hhb_la_benchmark, evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark),
+        total_avg_launch_angle, la_benchmark, evaluate_performance(total_avg_launch_angle, la_benchmark),
         avg_distance_top_8
     )
 
@@ -215,7 +208,6 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
         st.success("Report sent successfully!")
     except Exception as e:
         st.error(f"Failed to send email: {e}")
-
 # Streamlit Email Input and Button
 st.write("## Email the Report")
 recipient_email = st.text_input("Enter Email Address")
@@ -226,4 +218,3 @@ if st.button("Send Report"):
         send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
     else:
         st.error("Please enter a valid email address.")
-
