@@ -176,7 +176,7 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
         <p style="color: black;">The following data is constructed with benchmarks for each level.</p>
     """
 
-    # Add Bat Speed Metrics if available
+    # Check if Bat Speed Metrics are available
     if bat_speed_metrics:
         email_body += """
         <h3 style="color: black;">Bat Speed Metrics</h3>
@@ -194,10 +194,10 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
             player_avg_bat_speed, bat_speed_benchmark, evaluate_performance(player_avg_bat_speed, bat_speed_benchmark),
             top_10_percent_bat_speed, top_90_benchmark, evaluate_performance(top_10_percent_bat_speed, top_90_benchmark),
             avg_attack_angle_top_10, attack_angle_benchmark, evaluate_performance(avg_attack_angle_top_10, attack_angle_benchmark),
-            avg_time_to_contact, time_to_contact_benchmark, evaluate_performance(avg_time_to_contact, time_to_contact_benchmark)
+            avg_time_to_contact, time_to_contact_benchmark, evaluate_performance(avg_time_to_contact, time_to_contact_benchmark, lower_is_better=True)
         )
 
-    # Add Exit Velocity Metrics if available
+    # Check if Exit Velocity Metrics are available
     if exit_velocity_metrics:
         email_body += """
         <h3 style="color: black;">Exit Velocity Metrics</h3>
