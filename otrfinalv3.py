@@ -168,16 +168,57 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
     msg['To'] = recipient_email
     msg['Subject'] = "OTR Baseball Metrics and Grade Report"
 
-    # Construct the email body with only the metrics that are available
-    email_body = "<html><body><h2>OTR Metrics Report</h2><p>The following data is constructed with benchmarks for each level.</p>"
+    # Construct the email body with your formatted layout
+    email_body = """
+    <html>
+    <body>
+        <h2>OTR Metrics Report</h2>
+        <p>The following data is constructed with benchmarks for each level. </p>
+    """
 
     # Include Bat Speed Metrics if available
     if bat_speed_metrics:
-        email_body += f"<h3>Bat Speed Metrics</h3><ul>{bat_speed_metrics}</ul>"
+        email_body += """
+        <h3>Bat Speed Metrics</h3>
+        <ul>
+            <li><strong>Player Average Bat Speed:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
+                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
+            <li><strong>Top 10% Bat Speed:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
+                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
+            <li><strong>Average Attack Angle (Top 10% Bat Speed Swings):</strong> {:.2f}° (Benchmark: {:.2f}°)
+                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
+            <li><strong>Average Time to Contact:</strong> {:.3f} sec (Benchmark: {:.3f} sec)
+                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
+        </ul>
+        """.format(
+            player_avg_bat_speed, bat_speed_benchmark, evaluate_performance(player_avg_bat_speed, bat_speed_benchmark),
+            top_10_percent_bat_speed, top_90_benchmark, evaluate_performance(top_10_percent_bat_speed, top_90_benchmark),
+            avg_attack_angle_top_10, attack_angle_benchmark, evaluate_performance(avg_attack_angle_top_10, attack_angle_benchmark),
+            avg_time_to_contact, time_to_contact_benchmark, evaluate_performance(avg_time_to_contact, time_to_contact_benchmark)
+        )
 
     # Include Exit Velocity Metrics if available
     if exit_velocity_metrics:
-        email_body += f"<h3>Exit Velocity Metrics</h3><ul>{exit_velocity_metrics}</ul>"
+        email_body += """
+        <h3>Exit Velocity Metrics</h3>
+        <ul>
+            <li><strong>Average Exit Velocity:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
+                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
+            <li><strong>Top 8% Exit Velocity:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
+                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
+            <li><strong>Average Launch Angle (On Top 8% Exit Velocity Swings):</strong> {:.2f}° (Benchmark: {:.2f}°)
+                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
+            <li><strong>Total Average Launch Angle (Avg LA):</strong> {:.2f}° (Benchmark: {:.2f}°)
+                <br><strong>Player Grade:</strong> <strong>{}</strong></li>
+            <li><strong>Average Distance (8% swings):</strong> {:.2f} ft</li>
+        </ul>
+        """.format(
+            exit_velocity_avg, ev_benchmark, evaluate_performance(exit_velocity_avg, ev_benchmark),
+            top_8_percent_exit_velocity, top_8_benchmark, evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark),
+            avg_launch_angle_top_8, hhb_la_benchmark, evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark),
+            total_avg_launch_angle, la_benchmark, evaluate_performance(total_avg_launch_angle, la_benchmark),
+            avg_distance_top_8
+        )
 
     email_body += "<p>Best Regards,<br>OTR Baseball</p></body></html>"
 
