@@ -72,6 +72,7 @@ def player_grade(metric, benchmark, lower_is_better=False):
         else:  # More than 10% lower is "Below Average"
             return "Below Average"
 
+
 # Process Bat Speed File (Skip the first 8 rows)
 bat_speed_metrics = ""
 if bat_speed_file:
@@ -102,7 +103,8 @@ if bat_speed_file:
         f"- **Average Attack Angle (Top 10% Bat Speed Swings):** {avg_attack_angle_top_10:.2f}° (Benchmark: {attack_angle_benchmark}°)\n"
         f"  - Player Grade: {player_grade(avg_attack_angle_top_10, attack_angle_benchmark)}\n"
         f"- **Average Time to Contact:** {avg_time_to_contact:.3f} sec (Benchmark: {time_to_contact_benchmark} sec)\n"
-        f"  - Player Grade: {player_grade(avg_time_to_contact, time_to_contact_benchmark)}\n"
+        f"  - Player Grade: {player_grade(avg_time_to_contact, time_to_contact_benchmark, lower_is_better=True)}\n"
+
     )
 # Process Exit Velocity File (No rows skipped)
 exit_velocity_metrics = ""
