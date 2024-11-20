@@ -168,12 +168,12 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
     msg['To'] = recipient_email
     msg['Subject'] = "OTR Baseball Metrics and Grade Report"
 
-    # Construct the email body with your formatted layout
+    # Construct the email body with your formatted layout and white font color
     email_body = """
     <html>
-    <body>
+    <body style="color: white; background-color: black;">
         <h2>OTR Metrics Report</h2>
-        <p>The following data is constructed with benchmarks for each level. </p>
+        <p>The following data is constructed with benchmarks for each level.</p>
     """
 
     # Include Bat Speed Metrics if available
@@ -220,6 +220,7 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
             avg_distance_top_8
         )
 
+    # Close the HTML body
     email_body += "<p>Best Regards,<br>OTR Baseball</p></body></html>"
 
     msg.attach(MIMEText(email_body, 'html'))
@@ -233,6 +234,7 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
         st.success("Report sent successfully!")
     except Exception as e:
         st.error(f"Failed to send email: {e}")
+
 
 # Streamlit Email Input and Button
 st.write("## Email the Report")
