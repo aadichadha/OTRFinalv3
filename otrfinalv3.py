@@ -4,7 +4,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-# Title and Introduction
+# Title and Introductio
 st.title("OTR Baseball Metrics Analyzer")
 st.write("Upload your Bat Speed and Exit Velocity CSV files to generate a comprehensive report.")
 
