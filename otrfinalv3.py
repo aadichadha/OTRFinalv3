@@ -137,8 +137,8 @@ if exit_velocity_metrics:
     st.markdown(exit_velocity_metrics)
 
 # Email Configuration
-email_address = "aadichadha@gmail.com"  # Your email address
-email_password = "eeoi odag olix nnfc"  # Your app-specific password
+email_address = "otrdatatrack@gmail.com"  # Your email address
+email_password = "pslp fuab dmub cggo"  # Your app-specific password
 smtp_server = "smtp.gmail.com"
 smtp_port = 587
 
