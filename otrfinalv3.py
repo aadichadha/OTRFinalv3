@@ -71,7 +71,7 @@ def player_grade(metric, benchmark, lower_is_better=False):
             return "Average"
         else:  # More than 10% lower is "Below Average"
             return "Below Average"
-      
+
 # Process Bat Speed File (Skip the first 8 rows)
 bat_speed_metrics = ""
 if bat_speed_file:
