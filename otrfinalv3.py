@@ -40,21 +40,22 @@ benchmarks = {
 }
 # Function to determine performance category
 def evaluate_performance(metric, benchmark):
-    if abs(metric - benchmark) <= 0.1 * benchmark:
+    if metric > benchmark:
         return "Above Average"
-    elif abs(metric - benchmark) <= 0.2 * benchmark:
+    elif metric >= benchmark * 0.9:  # 10% or less off of the benchmark
         return "Average"
     else:
         return "Below Average"
 
 # Function to add Player Grade
 def player_grade(metric, benchmark):
-    if abs(metric - benchmark) <= 0.1 * benchmark:
+    if metric > benchmark:
         return "Above Average"
-    elif abs(metric - benchmark) <= 0.2 * benchmark:
+    elif metric >= benchmark * 0.9:  # 10% or less off of the benchmark
         return "Average"
     else:
         return "Below Average"
+        
 # Process Bat Speed File (Skip the first 8 rows)
 bat_speed_metrics = ""
 if bat_speed_file:
