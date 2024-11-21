@@ -160,19 +160,23 @@ email_password = "pslp fuab dmub cggo"  # Your app-specific password
 smtp_server = "smtp.gmail.com"
 smtp_port = 587
 
+# Player Name Input
+player_name = st.text_input("Enter Player Name")
+
 # Function to Send Email
-def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics):
+def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name):
     # Create the email content
     msg = MIMEMultipart()
     msg['From'] = email_address
     msg['To'] = recipient_email
     msg['Subject'] = "OTR Baseball Metrics and Grade Report"
 
-    # Start the email body with the general introduction
-    email_body = """
+    # Start the email body with the general introduction and player name
+    email_body = f"""
     <html>
     <body style="color: black; background-color: white;">
         <h2 style="color: black;">OTR Metrics Report</h2>
+        <p style="color: black;"><strong>Player Name:</strong> {player_name}</p>
         <p style="color: black;">The following data is constructed with benchmarks for each level.</p>
     """
 
@@ -241,7 +245,7 @@ recipient_email = st.text_input("Enter Email Address")
 
 if st.button("Send Report"):
     if recipient_email:
-        # Send the email report
-        send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics)
+        # Send the email report with the player's name
+        send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name)
     else:
         st.error("Please enter a valid email address.")
