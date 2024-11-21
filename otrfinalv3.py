@@ -160,23 +160,25 @@ email_password = "pslp fuab dmub cggo"  # Your app-specific password
 smtp_server = "smtp.gmail.com"
 smtp_port = 587
 
-# Player Name Input
+# Player Name and Date Range Input
 player_name = st.text_input("Enter Player Name")
+date_range = st.text_input("Enter Date Range (e.g., MM/DD/YYYY - MM/DD/YYYY)")
 
 # Function to Send Email
-def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name):
+def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name, date_range):
     # Create the email content
     msg = MIMEMultipart()
     msg['From'] = email_address
     msg['To'] = recipient_email
     msg['Subject'] = "OTR Baseball Metrics and Grade Report"
 
-    # Start the email body with the general introduction and player name
+    # Start the email body with the general introduction, player name, and date range
     email_body = f"""
     <html>
     <body style="color: black; background-color: white;">
         <h2 style="color: black;">OTR Metrics Report</h2>
         <p style="color: black;"><strong>Player Name:</strong> {player_name}</p>
+        <p style="color: black;"><strong>Date Range:</strong> {date_range}</p>
         <p style="color: black;">The following data is constructed with benchmarks for each level.</p>
     """
 
@@ -185,20 +187,24 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics,
         email_body += """
         <h3 style="color: black;">Bat Speed Metrics</h3>
         <ul>
-            <li style="color: black;"><strong>Player Average Bat Speed:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
+            <li style="color: {color1};"><strong>Player Average Bat Speed:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
                 <br>Player Grade: {}</li>
-            <li style="color: black;"><strong>Top 10% Bat Speed:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
+            <li style="color: {color2};"><strong>Top 10% Bat Speed:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
                 <br>Player Grade: {}</li>
-            <li style="color: black;"><strong>Average Attack Angle (Top 10% Bat Speed Swings):</strong> {:.2f}° (Benchmark: {:.2f}°)
+            <li style="color: {color3};"><strong>Average Attack Angle (Top 10% Bat Speed Swings):</strong> {:.2f}° (Benchmark: {:.2f}°)
                 <br>Player Grade: {}</li>
-            <li style="color: black;"><strong>Average Time to Contact:</strong> {:.3f} sec (Benchmark: {:.3f} sec)
+            <li style="color: {color4};"><strong>Average Time to Contact:</strong> {:.3f} sec (Benchmark: {:.3f} sec)
                 <br>Player Grade: {}</li>
         </ul>
         """.format(
             player_avg_bat_speed, bat_speed_benchmark, evaluate_performance(player_avg_bat_speed, bat_speed_benchmark),
             top_10_percent_bat_speed, top_90_benchmark, evaluate_performance(top_10_percent_bat_speed, top_90_benchmark),
             avg_attack_angle_top_10, attack_angle_benchmark, evaluate_performance(avg_attack_angle_top_10, attack_angle_benchmark),
-            avg_time_to_contact, time_to_contact_benchmark, evaluate_performance(avg_time_to_contact, time_to_contact_benchmark, lower_is_better=True)
+            avg_time_to_contact, time_to_contact_benchmark, evaluate_performance(avg_time_to_contact, time_to_contact_benchmark, lower_is_better=True),
+            color1="red" if evaluate_performance(player_avg_bat_speed, bat_speed_benchmark) == "Below Average" else "black",
+            color2="red" if evaluate_performance(top_10_percent_bat_speed, top_90_benchmark) == "Below Average" else "black",
+            color3="red" if evaluate_performance(avg_attack_angle_top_10, attack_angle_benchmark) == "Below Average" else "black",
+            color4="red" if evaluate_performance(avg_time_to_contact, time_to_contact_benchmark, lower_is_better=True) == "Below Average" else "black"
         )
 
     # Check if Exit Velocity Metrics are available
@@ -206,13 +212,13 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics,
         email_body += """
         <h3 style="color: black;">Exit Velocity Metrics</h3>
         <ul>
-            <li style="color: black;"><strong>Average Exit Velocity:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
+            <li style="color: {color5};"><strong>Average Exit Velocity:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
                 <br>Player Grade: {}</li>
-            <li style="color: black;"><strong>Top 8% Exit Velocity:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
+            <li style="color: {color6};"><strong>Top 8% Exit Velocity:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
                 <br>Player Grade: {}</li>
-            <li style="color: black;"><strong>Average Launch Angle (On Top 8% Exit Velocity Swings):</strong> {:.2f}° (Benchmark: {:.2f}°)
+            <li style="color: {color7};"><strong>Average Launch Angle (On Top 8% Exit Velocity Swings):</strong> {:.2f}° (Benchmark: {:.2f}°)
                 <br>Player Grade: {}</li>
-            <li style="color: black;"><strong>Total Average Launch Angle (Avg LA):</strong> {:.2f}° (Benchmark: {:.2f}°)
+            <li style="color: {color8};"><strong>Total Average Launch Angle (Avg LA):</strong> {:.2f}° (Benchmark: {:.2f}°)
                 <br>Player Grade: {}</li>
             <li style="color: black;"><strong>Average Distance (8% swings):</strong> {:.2f} ft</li>
         </ul>
@@ -221,7 +227,11 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics,
             top_8_percent_exit_velocity, top_8_benchmark, evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark),
             avg_launch_angle_top_8, hhb_la_benchmark, evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark),
             total_avg_launch_angle, la_benchmark, evaluate_performance(total_avg_launch_angle, la_benchmark),
-            avg_distance_top_8
+            avg_distance_top_8,
+            color5="red" if evaluate_performance(exit_velocity_avg, ev_benchmark) == "Below Average" else "black",
+            color6="red" if evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark) == "Below Average" else "black",
+            color7="red" if evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark) == "Below Average" else "black",
+            color8="red" if evaluate_performance(total_avg_launch_angle, la_benchmark) == "Below Average" else "black"
         )
 
     # Close the HTML body
@@ -245,7 +255,7 @@ recipient_email = st.text_input("Enter Email Address")
 
 if st.button("Send Report"):
     if recipient_email:
-        # Send the email report with the player's name
-        send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name)
+        # Send the email report with the player's name and date range
+        send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name, date_range)
     else:
         st.error("Please enter a valid email address.")
