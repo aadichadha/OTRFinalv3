@@ -162,7 +162,7 @@ smtp_port = 587
 
 # Player Name and Date Range Input
 player_name = st.text_input("Enter Player Name")
-date_range = st.text_input("Enter Date Range (e.g., MM/DD/YYYY - MM/DD/YYYY)")
+date_range = st.text_input("Enter Date Range)")
 
 # Function to Send Email
 def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name, date_range):
