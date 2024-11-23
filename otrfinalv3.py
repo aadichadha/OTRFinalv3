@@ -4,19 +4,25 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-# Title and Introducti
-st.title("OTR Baseball Metrics Analyzer")
-st.write("Upload your Bat Speed and Exit Velocity CSV files to generate a comprehensive report.")
-
 # File Uploads
 bat_speed_file = st.file_uploader("Upload Bat Speed File", type="csv")
 exit_velocity_file = st.file_uploader("Upload Exit Velocity File", type="csv")
 
-# Ask for Player Level
-player_level = st.selectbox("Select Player Level", ["Youth", "High School", "College", "Indy", "Affiliate"])
+# Ask for Player Level for Bat Speed and Exit Velocity
+bat_speed_level = st.selectbox("Select Player Level for Bat Speed", ["Youth", "High School", "College", "Indy", "Affiliate"])
+exit_velocity_level = st.selectbox("Select Player Level for Exit Velocity", ["10u", "12u", "14u", "Youth", "High School", "College", "Indy", "Affiliate"])
 
 # Updated Benchmarks Based on Levels
 benchmarks = {
+    "10u": {
+        "Avg EV": 50, "Top 8th EV": 61
+    },
+    "12u": {
+        "Avg EV": 59, "Top 8th EV": 72
+    },
+    "14u": {
+        "Avg EV": 68, "Top 8th EV": 80
+    },
     "Youth": {
         "Avg EV": 58.4, "Top 8th EV": 70.19, "Avg LA": 12.14, "HHB LA": 8.78,
         "Avg BatSpeed": 49.21, "90th% BatSpeed": 52.81, "Avg TimeToContact": 0.19, "Avg AttackAngle": 11.78
@@ -38,40 +44,6 @@ benchmarks = {
         "Avg BatSpeed": 70.17, "90th% BatSpeed": 75.14, "Avg TimeToContact": 0.147, "Avg AttackAngle": 11.09
     }
 }
-# Function to determine performance category
-def evaluate_performance(metric, benchmark, lower_is_better=False):
-    if lower_is_better:
-        if metric < benchmark:  # Lower values are better
-            return "Above Average"
-        elif metric <= benchmark * 1.1:  # Up to 10% higher is considered "Average"
-            return "Average"
-        else:  # More than 10% higher is "Below Average"
-            return "Below Average"
-    else:
-        if metric > benchmark:  # Higher values are better
-            return "Above Average"
-        elif metric >= benchmark * 0.9:  # Up to 10% lower is considered "Average"
-            return "Average"
-        else:  # More than 10% lower is "Below Average"
-            return "Below Average"
-
-# Function to add Player Grade
-def player_grade(metric, benchmark, lower_is_better=False):
-    if lower_is_better:
-        if metric < benchmark:  # Lower values are better
-            return "Above Average"
-        elif metric <= benchmark * 1.1:  # Up to 10% higher is considered "Average"
-            return "Average"
-        else:  # More than 10% higher is "Below Average"
-            return "Below Average"
-    else:
-        if metric > benchmark:  # Higher values are better
-            return "Above Average"
-        elif metric >= benchmark * 0.9:  # Up to 10% lower is considered "Average"
-            return "Average"
-        else:  # More than 10% lower is "Below Average"
-            return "Below Average"
-
 
 # Process Bat Speed File (Skip the first 8 rows)
 bat_speed_metrics = ""
@@ -88,10 +60,10 @@ if bat_speed_file:
     avg_time_to_contact = time_to_contact_data.mean()
 
     # Benchmarks for Bat Speed, Time to Contact, and Attack Angle
-    bat_speed_benchmark = benchmarks[player_level]["Avg BatSpeed"]
-    top_90_benchmark = benchmarks[player_level]["90th% BatSpeed"]
-    time_to_contact_benchmark = benchmarks[player_level]["Avg TimeToContact"]
-    attack_angle_benchmark = benchmarks[player_level]["Avg AttackAngle"]
+    bat_speed_benchmark = benchmarks[bat_speed_level]["Avg BatSpeed"]
+    top_90_benchmark = benchmarks[bat_speed_level]["90th% BatSpeed"]
+    time_to_contact_benchmark = benchmarks[bat_speed_level]["Avg TimeToContact"]
+    attack_angle_benchmark = benchmarks[bat_speed_level]["Avg AttackAngle"]
 
     # Format Bat Speed Metrics
     bat_speed_metrics = (
@@ -104,8 +76,8 @@ if bat_speed_file:
         f"  - Player Grade: {player_grade(avg_attack_angle_top_10, attack_angle_benchmark)}\n"
         f"- **Average Time to Contact:** {avg_time_to_contact:.3f} sec (Benchmark: {time_to_contact_benchmark} sec)\n"
         f"  - Player Grade: {player_grade(avg_time_to_contact, time_to_contact_benchmark, lower_is_better=True)}\n"
-
     )
+
 # Process Exit Velocity File (No rows skipped)
 exit_velocity_metrics = ""
 if exit_velocity_file:
@@ -128,10 +100,10 @@ if exit_velocity_file:
     total_avg_launch_angle = launch_angle_data[launch_angle_data > 0].mean()
 
     # Benchmarks for Exit Velocity, Avg LA, and HHB LA
-    ev_benchmark = benchmarks[player_level]["Avg EV"]
-    top_8_benchmark = benchmarks[player_level]["Top 8th EV"]
-    la_benchmark = benchmarks[player_level]["Avg LA"]
-    hhb_la_benchmark = benchmarks[player_level]["HHB LA"]
+    ev_benchmark = benchmarks[exit_velocity_level]["Avg EV"]
+    top_8_benchmark = benchmarks[exit_velocity_level]["Top 8th EV"]
+    la_benchmark = benchmarks.get(exit_velocity_level, {}).get("Avg LA", None)
+    hhb_la_benchmark = benchmarks.get(exit_velocity_level, {}).get("HHB LA", None)
 
     # Format Exit Velocity Metrics
     exit_velocity_metrics = (
@@ -140,10 +112,10 @@ if exit_velocity_file:
         f"  - Player Grade: {player_grade(exit_velocity_avg, ev_benchmark)}\n"
         f"- **Top 8% Exit Velocity:** {top_8_percent_exit_velocity:.2f} mph (Benchmark: {top_8_benchmark} mph)\n"
         f"  - Player Grade: {player_grade(top_8_percent_exit_velocity, top_8_benchmark)}\n"
-        f"- **Average Launch Angle (On Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
-        f"  - Player Grade: {player_grade(avg_launch_angle_top_8, hhb_la_benchmark)}\n"
-        f"- **Total Average Launch Angle (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
-        f"  - Player Grade: {player_grade(total_avg_launch_angle, la_benchmark)}\n"
+        f"- **Average Launch Angle (On Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark if hhb_la_benchmark else 'N/A'}°)\n"
+        f"  - Player Grade: {player_grade(avg_launch_angle_top_8, hhb_la_benchmark) if hhb_la_benchmark else "N/A"}\n"
+        f"- **Total Average Launch Angle (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark if la_benchmark else 'N/A'}°)\n"
+        f"  - Player Grade: {player_grade(total_avg_launch_angle, la_benchmark) if la_benchmark else 'N/A'}\n"
         f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
     )
 
@@ -182,57 +154,19 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics,
         <p style="color: black;">The following data is constructed with benchmarks for each level.</p>
     """
 
-    # Check if Bat Speed Metrics are available
+    # Add Bat Speed Metrics if available
     if bat_speed_metrics:
-        email_body += """
+        email_body += f"""
         <h3 style="color: black;">Bat Speed Metrics</h3>
-        <ul>
-            <li style="color: {color1};"><strong>Player Average Bat Speed:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
-                <br>Player Grade: {}</li>
-            <li style="color: {color2};"><strong>Top 10% Bat Speed:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
-                <br>Player Grade: {}</li>
-            <li style="color: {color3};"><strong>Average Attack Angle (Top 10% Bat Speed Swings):</strong> {:.2f}° (Benchmark: {:.2f}°)
-                <br>Player Grade: {}</li>
-            <li style="color: {color4};"><strong>Average Time to Contact:</strong> {:.3f} sec (Benchmark: {:.3f} sec)
-                <br>Player Grade: {}</li>
-        </ul>
-        """.format(
-            player_avg_bat_speed, bat_speed_benchmark, evaluate_performance(player_avg_bat_speed, bat_speed_benchmark),
-            top_10_percent_bat_speed, top_90_benchmark, evaluate_performance(top_10_percent_bat_speed, top_90_benchmark),
-            avg_attack_angle_top_10, attack_angle_benchmark, evaluate_performance(avg_attack_angle_top_10, attack_angle_benchmark),
-            avg_time_to_contact, time_to_contact_benchmark, evaluate_performance(avg_time_to_contact, time_to_contact_benchmark, lower_is_better=True),
-            color1="red" if evaluate_performance(player_avg_bat_speed, bat_speed_benchmark) == "Below Average" else "black",
-            color2="red" if evaluate_performance(top_10_percent_bat_speed, top_90_benchmark) == "Below Average" else "black",
-            color3="red" if evaluate_performance(avg_attack_angle_top_10, attack_angle_benchmark) == "Below Average" else "black",
-            color4="red" if evaluate_performance(avg_time_to_contact, time_to_contact_benchmark, lower_is_better=True) == "Below Average" else "black"
-        )
+        {bat_speed_metrics.replace("\n", "<br>").replace("  - ", "&emsp;")}
+        """
 
-    # Check if Exit Velocity Metrics are available
+    # Add Exit Velocity Metrics if available
     if exit_velocity_metrics:
-        email_body += """
+        email_body += f"""
         <h3 style="color: black;">Exit Velocity Metrics</h3>
-        <ul>
-            <li style="color: {color5};"><strong>Average Exit Velocity:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
-                <br>Player Grade: {}</li>
-            <li style="color: {color6};"><strong>Top 8% Exit Velocity:</strong> {:.2f} mph (Benchmark: {:.2f} mph)
-                <br>Player Grade: {}</li>
-            <li style="color: {color7};"><strong>Average Launch Angle (On Top 8% Exit Velocity Swings):</strong> {:.2f}° (Benchmark: {:.2f}°)
-                <br>Player Grade: {}</li>
-            <li style="color: {color8};"><strong>Total Average Launch Angle (Avg LA):</strong> {:.2f}° (Benchmark: {:.2f}°)
-                <br>Player Grade: {}</li>
-            <li style="color: black;"><strong>Average Distance (8% swings):</strong> {:.2f} ft</li>
-        </ul>
-        """.format(
-            exit_velocity_avg, ev_benchmark, evaluate_performance(exit_velocity_avg, ev_benchmark),
-            top_8_percent_exit_velocity, top_8_benchmark, evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark),
-            avg_launch_angle_top_8, hhb_la_benchmark, evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark),
-            total_avg_launch_angle, la_benchmark, evaluate_performance(total_avg_launch_angle, la_benchmark),
-            avg_distance_top_8,
-            color5="red" if evaluate_performance(exit_velocity_avg, ev_benchmark) == "Below Average" else "black",
-            color6="red" if evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark) == "Below Average" else "black",
-            color7="red" if evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark) == "Below Average" else "black",
-            color8="red" if evaluate_performance(total_avg_launch_angle, la_benchmark) == "Below Average" else "black"
-        )
+        {exit_velocity_metrics.replace("\n", "<br>").replace("  - ", "&emsp;")}
+        """
 
     # Close the HTML body
     email_body += "<p style='color: black;'>Best Regards,<br>OTR Baseball</p></body></html>"
@@ -248,7 +182,7 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics,
         st.success("Report sent successfully!")
     except Exception as e:
         st.error(f"Failed to send email: {e}")
-        
+
 # Streamlit Email Input and Button
 st.write("## Email the Report")
 recipient_email = st.text_input("Enter Email Address")
@@ -259,3 +193,4 @@ if st.button("Send Report"):
         send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name, date_range)
     else:
         st.error("Please enter a valid email address.")
+
