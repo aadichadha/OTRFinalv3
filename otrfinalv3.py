@@ -12,7 +12,7 @@ exit_velocity_file = st.file_uploader("Upload Exit Velocity File", type="csv")
 bat_speed_level = st.selectbox("Select Player Level for Bat Speed", ["Youth", "High School", "College", "Indy", "Affiliate"])
 exit_velocity_level = st.selectbox("Select Player Level for Exit Velocity", ["10u", "12u", "14u", "High School", "College", "Indy", "Affiliate"])
 
-# Updated Benchmarks Based on Levels
+# Updated Benchmarks Based on Leve
 benchmarks = {
     "10u": {
         "Avg EV": 50, "Top 8th EV": 61
