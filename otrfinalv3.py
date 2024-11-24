@@ -4,6 +4,10 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+# Title and Introduction
+st.title("OTR Baseball Metrics Analyzer")
+st.write("Upload your Bat Speed and Exit Velocity CSV files to generate a comprehensive report.")
+
 # File Uploads
 bat_speed_file = st.file_uploader("Upload Bat Speed File", type="csv")
 exit_velocity_file = st.file_uploader("Upload Exit Velocity File", type="csv")
@@ -11,17 +15,19 @@ exit_velocity_file = st.file_uploader("Upload Exit Velocity File", type="csv")
 # Ask for Player Level for Bat Speed and Exit Velocity
 bat_speed_level = st.selectbox("Select Player Level for Bat Speed", ["Youth", "High School", "College", "Indy", "Affiliate"])
 exit_velocity_level = st.selectbox("Select Player Level for Exit Velocity", ["10u", "12u", "14u", "High School", "College", "Indy", "Affiliate"])
-
-# Updated Benchmarks Based on Leve
+# Updated Benchmarks Based on Levels
 benchmarks = {
     "10u": {
-        "Avg EV": 50, "Top 8th EV": 61
+        "Avg EV": 50, "Top 8th EV": 61,
+        "Avg LA": 12.14, "HHB LA": 8.78  # Youth benchmarks for launch angles
     },
     "12u": {
-        "Avg EV": 59, "Top 8th EV": 72
+        "Avg EV": 59, "Top 8th EV": 72,
+        "Avg LA": 12.14, "HHB LA": 8.78  # Youth benchmarks for launch angles
     },
     "14u": {
-        "Avg EV": 68, "Top 8th EV": 80
+        "Avg EV": 68, "Top 8th EV": 80,
+        "Avg LA": 12.14, "HHB LA": 8.78  # Youth benchmarks for launch angles
     },
     "Youth": {
         "Avg EV": 58.4, "Top 8th EV": 70.19, "Avg LA": 12.14, "HHB LA": 8.78,
@@ -130,11 +136,11 @@ if exit_velocity_file:
     avg_distance_top_8 = distance_data[exit_velocity_data >= top_8_percent_exit_velocity].mean()
     total_avg_launch_angle = launch_angle_data[launch_angle_data > 0].mean()
 
-    # Benchmarks for Exit Velocity, Avg LA, and HHB LA
+    # Benchmarks for Exit Velocity
     ev_benchmark = benchmarks[exit_velocity_level]["Avg EV"]
     top_8_benchmark = benchmarks[exit_velocity_level]["Top 8th EV"]
-    la_benchmark = benchmarks.get(exit_velocity_level, {}).get("Avg LA", None)
-    hhb_la_benchmark = benchmarks.get(exit_velocity_level, {}).get("HHB LA", None)
+    la_benchmark = benchmarks[exit_velocity_level]["Avg LA"]
+    hhb_la_benchmark = benchmarks[exit_velocity_level]["HHB LA"]
 
     # Format Exit Velocity Metrics
     exit_velocity_metrics = (
@@ -143,10 +149,10 @@ if exit_velocity_file:
         f"  - Player Grade: {player_grade(exit_velocity_avg, ev_benchmark)}\n"
         f"- **Top 8% Exit Velocity:** {top_8_percent_exit_velocity:.2f} mph (Benchmark: {top_8_benchmark} mph)\n"
         f"  - Player Grade: {player_grade(top_8_percent_exit_velocity, top_8_benchmark)}\n"
-        f"- **Average Launch Angle (On Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark if hhb_la_benchmark else 'N/A'}°)\n"
-        f"  - Player Grade: {player_grade(avg_launch_angle_top_8, hhb_la_benchmark) if hhb_la_benchmark else 'N/A'}\n"
-        f"- **Total Average Launch Angle (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark if la_benchmark else 'N/A'}°)\n"
-        f"  - Player Grade: {player_grade(total_avg_launch_angle, la_benchmark) if la_benchmark else 'N/A'}\n"
+        f"- **Average Launch Angle (On Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
+        f"  - Player Grade: {player_grade(avg_launch_angle_top_8, hhb_la_benchmark)}\n"
+        f"- **Total Average Launch Angle (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
+        f"  - Player Grade: {player_grade(total_avg_launch_angle, la_benchmark)}\n"
         f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
     )
 # Display Results
@@ -155,6 +161,16 @@ if bat_speed_metrics:
     st.markdown(bat_speed_metrics)
 if exit_velocity_metrics:
     st.markdown(exit_velocity_metrics)
+
+# Player Name and Date Range Input
+player_name = st.text_input("Enter Player Name")
+date_range = st.text_input("Enter Date Range")
+
+# Email Configuration
+email_address = "otrdatatrack@gmail.com"  # Your email address
+email_password = "pslp fuab dmub cggo"  # Your app-specific password
+smtp_server = "smtp.gmail.com"
+smtp_port = 587
 # Function to Send Email
 def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name, date_range):
     # Create the email content
@@ -201,54 +217,6 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics,
         st.success("Report sent successfully!")
     except Exception as e:
         st.error(f"Failed to send email: {e}")
-
-# Function to Send Email
-def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name, date_range):
-    # Create the email content
-    msg = MIMEMultipart()
-    msg['From'] = email_address
-    msg['To'] = recipient_email
-    msg['Subject'] = "OTR Baseball Metrics and Grade Report"
-
-    # Start the email body with the general introduction, player name, and date range
-    email_body = f"""
-    <html>
-    <body style="color: black; background-color: white;">
-        <h2 style="color: black;">OTR Metrics Report</h2>
-        <p style="color: black;"><strong>Player Name:</strong> {player_name}</p>
-        <p style="color: black;"><strong>Date Range:</strong> {date_range}</p>
-        <p style="color: black;">The following data is constructed with benchmarks for each level.</p>
-    """
-
-    # Add Bat Speed Metrics if available
-    if bat_speed_metrics:
-        email_body += f"""
-        <h3 style="color: black;">Bat Speed Metrics</h3>
-        {bat_speed_metrics.replace("\n", "<br>").replace("  - ", "&emsp;")}
-        """
-
-    # Add Exit Velocity Metrics if available
-    if exit_velocity_metrics:
-        email_body += f"""
-        <h3 style="color: black;">Exit Velocity Metrics</h3>
-        {exit_velocity_metrics.replace("\n", "<br>").replace("  - ", "&emsp;")}
-        """
-
-    # Close the HTML body
-    email_body += "<p style='color: black;'>Best Regards,<br>OTR Baseball</p></body></html>"
-
-    msg.attach(MIMEText(email_body, 'html'))
-
-    # Send the email
-    try:
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.starttls()
-            server.login(email_address, email_password)
-            server.send_message(msg)
-        st.success("Report sent successfully!")
-    except Exception as e:
-        st.error(f"Failed to send email: {e}")
-
 # Streamlit Email Input and Button
 st.write("## Email the Report")
 recipient_email = st.text_input("Enter Email Address")
