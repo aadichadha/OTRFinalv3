@@ -65,11 +65,11 @@ def evaluate_performance(metric, benchmark, lower_is_better=False, special_metri
     if special_metric:  # Special handling for Exit Velocity and Top 8% Exit Velocity
         if abs(metric - benchmark) <= 3:  # Within ±3 mph of the benchmark
             return "Average"
-        elif metric < benchmark - 3:  # More than 3 mph below the benchmark
-            return "Below Average"
-        else:  # More than 3 mph above the benchmark
+        elif metric > benchmark + 3:  # More than 3 mph above the benchmark
             return "Above Average"
-    else:  # Standard evaluation for other metrics
+        else:  # More than 3 mph below the benchmark
+            return "Below Average"
+    else:  # Standard evaluation
         if lower_is_better:
             if metric < benchmark:  # Lower values are better
                 return "Above Average"
@@ -85,44 +85,6 @@ def evaluate_performance(metric, benchmark, lower_is_better=False, special_metri
             else:  # More than 10% lower is "Below Average"
                 return "Below Average"
 
-# Function to add Player Grade
-def player_grade(metric, benchmark, lower_is_better=False, special_metric=False):
-    return evaluate_performance(metric, benchmark, lower_is_better, special_metric)
-
-# Process Exit Velocity File (No rows skipped)
-exit_velocity_metrics = ""
-if exit_velocity_file:
-    df_exit_velocity = pd.read_csv(exit_velocity_file)  # No rows are skipped here
-    exit_velocity_data = pd.to_numeric(df_exit_velocity["Velo"], errors="coerce")  # Column H: "Velo"
-    exit_velocity_data = exit_velocity_data[exit_velocity_data > 0]  # Remove zeros
-
-    if not exit_velocity_data.empty:
-        # Calculate Exit Velocity Metrics
-        exit_velocity_avg = exit_velocity_data.mean()
-        top_8_percent_exit_velocity = exit_velocity_data.quantile(0.92)
-
-        # Benchmarks for Exit Velocity
-        ev_benchmark = benchmarks[exit_velocity_level]["Avg EV"]
-        top_8_benchmark = benchmarks[exit_velocity_level]["Top 8th EV"]
-        la_benchmark = benchmarks[exit_velocity_level]["Avg LA"]
-        hhb_la_benchmark = benchmarks[exit_velocity_level]["HHB LA"]
-
-        # Format Exit Velocity Metrics
-        exit_velocity_metrics = (
-            "### Exit Velocity Metrics\n"
-            f"- **Average Exit Velocity:** {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)\n"
-            f"  - Player Grade: {player_grade(exit_velocity_avg, ev_benchmark, special_metric=True)}\n"
-            f"- **Top 8% Exit Velocity:** {top_8_percent_exit_velocity:.2f} mph (Benchmark: {top_8_benchmark} mph)\n"
-            f"  - Player Grade: {player_grade(top_8_percent_exit_velocity, top_8_benchmark, special_metric=True)}\n"
-            f"- **Average Launch Angle (On Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
-            f"  - Player Grade: {player_grade(avg_launch_angle_top_8, hhb_la_benchmark)}\n"
-            f"- **Total Average Launch Angle (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
-            f"  - Player Grade: {player_grade(total_avg_launch_angle, la_benchmark)}\n"
-            f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
-        )
-    else:
-        st.error("No valid Exit Velocity data found (all values are zero or invalid).")
-
 # Process Exit Velocity File (No rows skipped)
 exit_velocity_metrics = ""
 if exit_velocity_file:
@@ -132,14 +94,11 @@ if exit_velocity_file:
     distance_data = pd.to_numeric(df_exit_velocity.iloc[:, 9], errors='coerce')  # Column J: "Dist"
 
     # Filter out rows where Exit Velocity is zero or NaN
-    non_zero_ev_rows = df_exit_velocity[exit_velocity_data > 0]
-    exit_velocity_data = pd.to_numeric(non_zero_ev_rows.iloc[:, 7], errors='coerce')  # Filtered "Velo"
-    launch_angle_data = pd.to_numeric(non_zero_ev_rows.iloc[:, 8], errors='coerce')  # Filtered "LA"
-    distance_data = pd.to_numeric(non_zero_ev_rows.iloc[:, 9], errors='coerce')  # Filtered "Dist"
+    non_zero_ev_rows = exit_velocity_data[exit_velocity_data > 0]
 
     # Calculate Exit Velocity Metrics
-    exit_velocity_avg = exit_velocity_data.mean()
-    top_8_percent_exit_velocity = exit_velocity_data.quantile(0.92)
+    exit_velocity_avg = non_zero_ev_rows.mean()
+    top_8_percent_exit_velocity = non_zero_ev_rows.quantile(0.92)
     avg_launch_angle_top_8 = launch_angle_data[exit_velocity_data >= top_8_percent_exit_velocity].mean()
     avg_distance_top_8 = distance_data[exit_velocity_data >= top_8_percent_exit_velocity].mean()
     total_avg_launch_angle = launch_angle_data[launch_angle_data > 0].mean()
@@ -154,15 +113,16 @@ if exit_velocity_file:
     exit_velocity_metrics = (
         "### Exit Velocity Metrics\n"
         f"- **Average Exit Velocity:** {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)\n"
-        f"  - Player Grade: {player_grade(exit_velocity_avg, ev_benchmark)}\n"
+        f"  - Player Grade: {evaluate_performance(exit_velocity_avg, ev_benchmark, special_metric=True)}\n"
         f"- **Top 8% Exit Velocity:** {top_8_percent_exit_velocity:.2f} mph (Benchmark: {top_8_benchmark} mph)\n"
-        f"  - Player Grade: {player_grade(top_8_percent_exit_velocity, top_8_benchmark)}\n"
+        f"  - Player Grade: {evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark, special_metric=True)}\n"
         f"- **Average Launch Angle (On Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
-        f"  - Player Grade: {player_grade(avg_launch_angle_top_8, hhb_la_benchmark)}\n"
+        f"  - Player Grade: {evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark)}\n"
         f"- **Total Average Launch Angle (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
-        f"  - Player Grade: {player_grade(total_avg_launch_angle, la_benchmark)}\n"
+        f"  - Player Grade: {evaluate_performance(total_avg_launch_angle, la_benchmark)}\n"
         f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
     )
+    
 # Display Results
 st.write("## Calculated Metrics")
 if bat_speed_metrics:
