@@ -14,7 +14,7 @@ exit_velocity_file = st.file_uploader("Upload Exit Velocity File", type="csv")
 
 # Ask for Player Level for Bat Speed and Exit Velocity
 bat_speed_level = st.selectbox("Select Player Level for Bat Speed", ["Youth", "High School", "College", "Indy", "Affiliate"])
-exit_velocity_level = st.selectbox("Select Player Level for Exit Velocity", ["10u", "12u", "14u", "16u", "18u", "College", "Indy", "Affiliate"])
+exit_velocity_level = st.selectbox("Select Player Level for Exit Velocity", ["10U", "12U", "14U", "JV/16u", "Var/18U", "College", "Indy", "Affiliate"])
 
 # Updated Benchmarks Based on Levels
 # Updated Benchmarks Based on Levels
