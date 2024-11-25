@@ -14,7 +14,7 @@ exit_velocity_file = st.file_uploader("Upload Exit Velocity File", type="csv")
 
 # Ask for Player Level for Bat Speed and Exit Velocity
 bat_speed_level = st.selectbox("Select Player Level for Bat Speed", ["Youth", "High School", "College", "Indy", "Affiliate"])
-exit_velocity_level = st.selectbox("Select Player Level for Exit Velocity", ["10U", "12U", "14U", "JV/16u", "Var/18u", "College", "Indy", "Affiliate"])
+exit_velocity_level = st.selectbox("Select Player Level for Exit Velocity", ["10u", "12u", "14u", "16u", "18u", "College", "Indy", "Affiliate"])
 
 # Updated Benchmarks Based on Levels
 # Updated Benchmarks Based on Levels
@@ -31,11 +31,11 @@ benchmarks = {
         "Avg EV": 68, "Top 8th EV": 80,
         "Avg LA": 12.14, "HHB LA": 8.78  # Youth benchmarks for launch angles
     },
-    "JV/16u": {  # Match the dropdown value
+    "16u": {  # Match the dropdown value
         "Avg EV": 72.65, "Top 8th EV": 85.0,  # New 16u benchmarks for Exit Velocity
         "Avg LA": 16.51, "HHB LA": 11.47  # Keeping existing High School benchmarks for launch angles
     },
-    "Var/18u": {  # Match the dropdown value
+    "18u: {  # Match the dropdown value
         "Avg EV": 78.0, "Top 8th EV": 91.5,  # New 18u benchmarks for Exit Velocity
         "Avg LA": 16.51, "HHB LA": 11.47  # Keeping existing High School benchmarks for launch angles
     },
