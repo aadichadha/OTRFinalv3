@@ -14,8 +14,9 @@ exit_velocity_file = st.file_uploader("Upload Exit Velocity File", type="csv")
 
 # Ask for Player Level for Bat Speed and Exit Velocity
 bat_speed_level = st.selectbox("Select Player Level for Bat Speed", ["Youth", "High School", "College", "Indy", "Affiliate"])
-exit_velocity_level = st.selectbox("Select Player Level for Exit Velocity", ["10u", "12u", "14u", "High School", "College", "Indy", "Affiliate"])
+exit_velocity_level = st.selectbox("Select Player Level for Exit Velocity", ["10u", "12u", "14u", "16u", "18u", "College", "Indy", "Affiliate"])
 
+# Updated Benchmarks Based on Levels
 # Updated Benchmarks Based on Levels
 benchmarks = {
     "10u": {
@@ -30,11 +31,19 @@ benchmarks = {
         "Avg EV": 68, "Top 8th EV": 80,
         "Avg LA": 12.14, "HHB LA": 8.78  # Youth benchmarks for launch angles
     },
+    "16u": {
+        "Avg EV": 72.65, "Top 8th EV": 85.0,  # New 16u benchmarks for Exit Velocity
+        "Avg LA": 16.51, "HHB LA": 11.47  # Keeping existing High School benchmarks for launch angles
+    },
+    "18u": {
+        "Avg EV": 78.0, "Top 8th EV": 91.5,  # New 18u benchmarks for Exit Velocity
+        "Avg LA": 16.51, "HHB LA": 11.47  # Keeping existing High School benchmarks for launch angles
+    },
     "Youth": {
         "Avg EV": 58.4, "Top 8th EV": 70.19, "Avg LA": 12.14, "HHB LA": 8.78,
         "Avg BatSpeed": 49.21, "90th% BatSpeed": 52.81, "Avg TimeToContact": 0.19, "Avg AttackAngle": 11.78
     },
-    "High School": {
+    "High School": {  # High School removed for Exit Velocity but retained for Bat Speed
         "Avg EV": 74.54, "Top 8th EV": 86.75, "Avg LA": 16.51, "HHB LA": 11.47,
         "Avg BatSpeed": 62.4, "90th% BatSpeed": 67.02, "Avg TimeToContact": 0.163, "Avg AttackAngle": 9.8
     },
