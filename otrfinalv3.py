@@ -124,19 +124,20 @@ la_benchmark = benchmarks[exit_velocity_level]["Avg LA"]
 hhb_la_benchmark = benchmarks[exit_velocity_level]["HHB LA"]
 
 # Format Exit Velocity Metrics
+# Format Exit Velocity Metrics
 exit_velocity_metrics = (
     "### Exit Velocity Metrics\n"
     f"- **Average Exit Velocity:** {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)\n"
-    f"  - Player Grade: {player_grade(exit_velocity_avg, ev_benchmark, special_metric=True)}\n"  # Pass special_metric=True
+    f"  - Player Grade: {player_grade(exit_velocity_avg, ev_benchmark, special_metric=True)}\n"  # Use special_metric
     f"- **Top 8% Exit Velocity:** {top_8_percent_exit_velocity:.2f} mph (Benchmark: {top_8_benchmark} mph)\n"
-    f"  - Player Grade: {player_grade(top_8_percent_exit_velocity, top_8_benchmark, special_metric=True)}\n"  # Pass special_metric=True
+    f"  - Player Grade: {player_grade(top_8_percent_exit_velocity, top_8_benchmark, special_metric=True)}\n"  # Use special_metric
     f"- **Average Launch Angle (On Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
     f"  - Player Grade: {player_grade(avg_launch_angle_top_8, hhb_la_benchmark)}\n"
     f"- **Total Average Launch Angle (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
     f"  - Player Grade: {player_grade(total_avg_launch_angle, la_benchmark)}\n"
     f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
 )
-    
+ 
 # Process Exit Velocity File (No rows skipped)
 exit_velocity_metrics = ""
 if exit_velocity_file:
