@@ -15,6 +15,7 @@ exit_velocity_file = st.file_uploader("Upload Exit Velocity File", type="csv")
 # Ask for Player Level for Bat Speed and Exit Velocity
 bat_speed_level = st.selectbox("Select Player Level for Bat Speed", ["Youth", "High School", "College", "Indy", "Affiliate"])
 exit_velocity_level = st.selectbox("Select Player Level for Exit Velocity", ["10u", "12u", "14u", "High School", "College", "Indy", "Affiliate"])
+
 # Updated Benchmarks Based on Levels
 benchmarks = {
     "10u": {
@@ -51,38 +52,55 @@ benchmarks = {
     }
 }
 # Function to determine performance category
-def evaluate_performance(metric, benchmark, lower_is_better=False):
-    if lower_is_better:
-        if metric < benchmark:  # Lower values are better
-            return "Above Average"
-        elif metric <= benchmark * 1.1:  # Up to 10% higher is considered "Average"
+def evaluate_performance(metric, benchmark, lower_is_better=False, special_metric=False):
+    if special_metric:  # Special handling for Exit Velocity and Top 8% Exit Velocity
+        if abs(metric - benchmark) <= 3:  # Within ±3 mph of the benchmark
             return "Average"
-        else:  # More than 10% higher is "Below Average"
-            return "Below Average"
-    else:
-        if metric > benchmark:  # Higher values are better
+        elif metric > benchmark + 3:  # More than 3 mph above the benchmark
             return "Above Average"
-        elif metric >= benchmark * 0.9:  # Up to 10% lower is considered "Average"
-            return "Average"
-        else:  # More than 10% lower is "Below Average"
+        else:  # More than 3 mph below the benchmark
             return "Below Average"
+    else:  # Standard evaluation
+        if lower_is_better:
+            if metric < benchmark:  # Lower values are better
+                return "Above Average"
+            elif metric <= benchmark * 1.1:  # Up to 10% higher is considered "Average"
+                return "Average"
+            else:  # More than 10% higher is "Below Average"
+                return "Below Average"
+        else:
+            if metric > benchmark:  # Higher values are better
+                return "Above Average"
+            elif metric >= benchmark * 0.9:  # Up to 10% lower is considered "Average"
+                return "Average"
+            else:  # More than 10% lower is "Below Average"
+                return "Below Average"
 
 # Function to add Player Grade
-def player_grade(metric, benchmark, lower_is_better=False):
-    if lower_is_better:
-        if metric < benchmark:  # Lower values are better
-            return "Above Average"
-        elif metric <= benchmark * 1.1:  # Up to 10% higher is considered "Average"
+def player_grade(metric, benchmark, lower_is_better=False, special_metric=False):
+    if special_metric:  # Special handling for Exit Velocity and Top 8% Exit Velocity
+        if abs(metric - benchmark) <= 3:  # Within ±3 mph of the benchmark
             return "Average"
-        else:  # More than 10% higher is "Below Average"
-            return "Below Average"
-    else:
-        if metric > benchmark:  # Higher values are better
+        elif metric > benchmark + 3:  # More than 3 mph above the benchmark
             return "Above Average"
-        elif metric >= benchmark * 0.9:  # Up to 10% lower is considered "Average"
-            return "Average"
-        else:  # More than 10% lower is "Below Average"
+        else:  # More than 3 mph below the benchmark
             return "Below Average"
+    else:  # Standard evaluation
+        if lower_is_better:
+            if metric < benchmark:  # Lower values are better
+                return "Above Average"
+            elif metric <= benchmark * 1.1:  # Up to 10% higher is considered "Average"
+                return "Average"
+            else:  # More than 10% higher is "Below Average"
+                return "Below Average"
+        else:
+            if metric > benchmark:  # Higher values are better
+                return "Above Average"
+            elif metric >= benchmark * 0.9:  # Up to 10% lower is considered "Average"
+                return "Average"
+            else:  # More than 10% lower is "Below Average"
+                return "Below Average"
+
 # Process Bat Speed File (Skip the first 8 rows)
 bat_speed_metrics = ""
 if bat_speed_file:
