@@ -31,11 +31,11 @@ benchmarks = {
         "Avg EV": 68, "Top 8th EV": 80,
         "Avg LA": 12.14, "HHB LA": 8.78  # Youth benchmarks for launch angles
     },
-    "16u": {
+    "JV/16u": {
         "Avg EV": 72.65, "Top 8th EV": 85.0,  # New 16u benchmarks for Exit Velocity
         "Avg LA": 16.51, "HHB LA": 11.47  # Keeping existing High School benchmarks for launch angles
     },
-    "18u": {
+    "Var/18u": {
         "Avg EV": 78.0, "Top 8th EV": 91.5,  # New 18u benchmarks for Exit Velocity
         "Avg LA": 16.51, "HHB LA": 11.47  # Keeping existing High School benchmarks for launch angles
     },
