@@ -85,8 +85,41 @@ def evaluate_performance(metric, benchmark, lower_is_better=False, special_metri
             else:  # More than 10% lower is "Below Average"
                 return "Below Average"
 
+# Process Bat Speed File (Skip the first 8 rows)
+bat_speed_metrics = None  # Initialize as None
+if bat_speed_file:
+    df_bat_speed = pd.read_csv(bat_speed_file, skiprows=8)
+    bat_speed_data = pd.to_numeric(df_bat_speed.iloc[:, 7], errors='coerce')  # Column H: "Bat Speed (mph)"
+    attack_angle_data = pd.to_numeric(df_bat_speed.iloc[:, 10], errors='coerce')  # Column K: "Attack Angle (deg)"
+    time_to_contact_data = pd.to_numeric(df_bat_speed.iloc[:, 15], errors='coerce')  # Column: "Time to Contact (sec)"
+
+    # Calculate Bat Speed Metrics
+    player_avg_bat_speed = bat_speed_data.mean()
+    top_10_percent_bat_speed = bat_speed_data.quantile(0.90)
+    avg_attack_angle_top_10 = attack_angle_data[bat_speed_data >= top_10_percent_bat_speed].mean()
+    avg_time_to_contact = time_to_contact_data.mean()
+
+    # Benchmarks for Bat Speed, Time to Contact, and Attack Angle
+    bat_speed_benchmark = benchmarks[bat_speed_level]["Avg BatSpeed"]
+    top_90_benchmark = benchmarks[bat_speed_level]["90th% BatSpeed"]
+    time_to_contact_benchmark = benchmarks[bat_speed_level]["Avg TimeToContact"]
+    attack_angle_benchmark = benchmarks[bat_speed_level]["Avg AttackAngle"]
+
+    # Format Bat Speed Metrics
+    bat_speed_metrics = (
+        "### Bat Speed Metrics\n"
+        f"- **Player Average Bat Speed:** {player_avg_bat_speed:.2f} mph (Benchmark: {bat_speed_benchmark} mph)\n"
+        f"  - Player Grade: {evaluate_performance(player_avg_bat_speed, bat_speed_benchmark)}\n"
+        f"- **Top 10% Bat Speed:** {top_10_percent_bat_speed:.2f} mph (Benchmark: {top_90_benchmark} mph)\n"
+        f"  - Player Grade: {evaluate_performance(top_10_percent_bat_speed, top_90_benchmark)}\n"
+        f"- **Average Attack Angle (Top 10% Bat Speed Swings):** {avg_attack_angle_top_10:.2f}° (Benchmark: {attack_angle_benchmark}°)\n"
+        f"  - Player Grade: {evaluate_performance(avg_attack_angle_top_10, attack_angle_benchmark)}\n"
+        f"- **Average Time to Contact:** {avg_time_to_contact:.3f} sec (Benchmark: {time_to_contact_benchmark} sec)\n"
+        f"  - Player Grade: {evaluate_performance(avg_time_to_contact, time_to_contact_benchmark, lower_is_better=True)}\n"
+    )
+
 # Process Exit Velocity File (No rows skipped)
-exit_velocity_metrics = ""
+exit_velocity_metrics = None  # Initialize as None
 if exit_velocity_file:
     df_exit_velocity = pd.read_csv(exit_velocity_file)  # No rows are skipped here
     exit_velocity_data = pd.to_numeric(df_exit_velocity.iloc[:, 7], errors='coerce')  # Column H: "Velo"
@@ -122,6 +155,19 @@ if exit_velocity_file:
         f"  - Player Grade: {evaluate_performance(total_avg_launch_angle, la_benchmark)}\n"
         f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
     )
+
+# Display Results
+st.write("## Calculated Metrics")
+if bat_speed_metrics:
+    st.markdown(bat_speed_metrics)
+else:
+    st.write("No Bat Speed Metrics available. Please upload a Bat Speed file.")
+
+if exit_velocity_metrics:
+    st.markdown(exit_velocity_metrics)
+else:
+    st.write("No Exit Velocity Metrics available. Please upload an Exit Velocity file.")
+
     
 # Display Results
 st.write("## Calculated Metrics")
