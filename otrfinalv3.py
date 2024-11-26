@@ -60,15 +60,14 @@ benchmarks = {
         "Avg BatSpeed": 70.17, "90th% BatSpeed": 75.14, "Avg TimeToContact": 0.147, "Avg AttackAngle": 11.09
     }
 }
-# Function to determine performance category
 def evaluate_performance(metric, benchmark, lower_is_better=False, special_metric=False):
     if special_metric:  # Special handling for Exit Velocity and Top 8% Exit Velocity
-        if abs(metric - benchmark) <= 3:  # Within ±3 mph of the benchmark
+        if metric >= benchmark - 3 and metric <= benchmark:  # Within or less than 3 mph below the benchmark
             return "Average"
-        elif metric > benchmark + 3:  # More than 3 mph above the benchmark
-            return "Above Average"
         elif metric < benchmark - 3:  # More than 3 mph below the benchmark
             return "Below Average"
+        else:  # Anything above the benchmark
+            return "Above Average"
     else:  # Standard evaluation
         if lower_is_better:
             if metric < benchmark:  # Lower values are better
