@@ -119,7 +119,6 @@ if bat_speed_file:
     )
 
 # Process Exit Velocity File (No rows skipped)
-# Process Exit Velocity File (No rows skipped)
 exit_velocity_metrics = None  # Initialize as None
 if exit_velocity_file:
     df_exit_velocity = pd.read_csv(exit_velocity_file)  # No rows are skipped here
@@ -149,19 +148,25 @@ if exit_velocity_file:
                 la_benchmark = benchmarks[exit_velocity_level]["Avg LA"]
                 hhb_la_benchmark = benchmarks[exit_velocity_level]["HHB LA"]
 
-    # Format Exit Velocity Metrics
-exit_velocity_metrics = (
-    "### Exit Velocity Metrics\n"
-    f"- **Average Exit Velocity:** {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)\n"
-    f"  - Player Grade: {evaluate_performance(exit_velocity_avg, ev_benchmark, special_metric=True)}\n"
-    f"- **Top 8% Exit Velocity:** {top_8_percent_exit_velocity:.2f} mph (Benchmark: {top_8_benchmark} mph)\n"
-    f"  - Player Grade: {evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark, special_metric=True)}\n"
-    f"- **Average Launch Angle (On Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
-    f"  - Player Grade: {evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark)}\n"
-    f"- **Total Average Launch Angle (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
-    f"  - Player Grade: {evaluate_performance(total_avg_launch_angle, la_benchmark)}\n"
-    f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
-) 
+                # Format Exit Velocity Metrics
+                exit_velocity_metrics = (
+                    "### Exit Velocity Metrics\n"
+                    f"- **Average Exit Velocity:** {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)\n"
+                    f"  - Player Grade: {evaluate_performance(exit_velocity_avg, ev_benchmark, special_metric=True)}\n"
+                    f"- **Top 8% Exit Velocity:** {top_8_percent_exit_velocity:.2f} mph (Benchmark: {top_8_benchmark} mph)\n"
+                    f"  - Player Grade: {evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark, special_metric=True)}\n"
+                    f"- **Average Launch Angle (On Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
+                    f"  - Player Grade: {evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark)}\n"
+                    f"- **Total Average Launch Angle (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
+                    f"  - Player Grade: {evaluate_performance(total_avg_launch_angle, la_benchmark)}\n"
+                    f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
+                )
+            else:
+                st.error("No valid Exit Velocity data found in the file. Please check the data.")
+        else:
+            st.error("The uploaded file does not have the required columns for Exit Velocity.")
+    except Exception as e:
+        st.error(f"An error occurred while processing the Exit Velocity file: {e}")
 
 # Display Results
 st.write("## Calculated Metrics")
