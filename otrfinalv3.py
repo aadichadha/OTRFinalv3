@@ -67,7 +67,7 @@ def evaluate_performance(metric, benchmark, lower_is_better=False, special_metri
             return "Average"
         elif metric > benchmark + 3:  # More than 3 mph above the benchmark
             return "Above Average"
-        else:  # More than 3 mph below the benchmark
+        elif metric < benchmark - 3:  # More than 3 mph below the benchmark
             return "Below Average"
     else:  # Standard evaluation
         if lower_is_better:
@@ -143,19 +143,19 @@ if exit_velocity_file:
     hhb_la_benchmark = benchmarks[exit_velocity_level]["HHB LA"]
 
     # Format Exit Velocity Metrics
-    exit_velocity_metrics = (
-        "### Exit Velocity Metrics\n"
-        f"- **Average Exit Velocity:** {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)\n"
-        f"  - Player Grade: {evaluate_performance(exit_velocity_avg, ev_benchmark, special_metric=True)}\n"
-        f"- **Top 8% Exit Velocity:** {top_8_percent_exit_velocity:.2f} mph (Benchmark: {top_8_benchmark} mph)\n"
-        f"  - Player Grade: {evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark, special_metric=True)}\n"
-        f"- **Average Launch Angle (On Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
-        f"  - Player Grade: {evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark)}\n"
-        f"- **Total Average Launch Angle (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
-        f"  - Player Grade: {evaluate_performance(total_avg_launch_angle, la_benchmark)}\n"
-        f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
-    )
-  
+exit_velocity_metrics = (
+    "### Exit Velocity Metrics\n"
+    f"- **Average Exit Velocity:** {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)\n"
+    f"  - Player Grade: {evaluate_performance(exit_velocity_avg, ev_benchmark, special_metric=True)}\n"
+    f"- **Top 8% Exit Velocity:** {top_8_percent_exit_velocity:.2f} mph (Benchmark: {top_8_benchmark} mph)\n"
+    f"  - Player Grade: {evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark, special_metric=True)}\n"
+    f"- **Average Launch Angle (On Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
+    f"  - Player Grade: {evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark)}\n"
+    f"- **Total Average Launch Angle (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
+    f"  - Player Grade: {evaluate_performance(total_avg_launch_angle, la_benchmark)}\n"
+    f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
+) 
+
 # Display Results
 st.write("## Calculated Metrics")
 if bat_speed_metrics:
