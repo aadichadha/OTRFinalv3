@@ -155,32 +155,7 @@ if exit_velocity_file:
         f"  - Player Grade: {evaluate_performance(total_avg_launch_angle, la_benchmark)}\n"
         f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
     )
-    
-# Display Results
-st.write("## Calculated Metrics")
-if bat_speed_metrics:
-    st.markdown(bat_speed_metrics)
-else:
-    st.write("No Bat Speed Metrics available. Please upload a Bat Speed file.")
-
-if exit_velocity_metrics:
-    st.markdown(exit_velocity_metrics)
-else:
-    st.write("No Exit Velocity Metrics available. Please upload an Exit Velocity file.")
-
-# Display Results
-st.write("## Calculated Metrics")
-if bat_speed_metrics:
-    st.markdown(bat_speed_metrics)
-else:
-    st.write("No Bat Speed Metrics available. Please upload a Bat Speed file.")
-
-if exit_velocity_metrics:
-    st.markdown(exit_velocity_metrics)
-else:
-    st.write("No Exit Velocity Metrics available. Please upload an Exit Velocity file.")
-
-    
+  
 # Display Results
 st.write("## Calculated Metrics")
 if bat_speed_metrics:
