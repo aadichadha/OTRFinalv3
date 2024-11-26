@@ -178,6 +178,12 @@ if exit_velocity_metrics:
 player_name = st.text_input("Enter Player Name")
 date_range = st.text_input("Enter Date Range")
 
+# Email Configuration
+email_address = "otrdatatrack@gmail.com"  # Your email address
+email_password = "pslp fuab dmub cggo"  # Your app-specific password
+smtp_server = "smtp.gmail.com"
+smtp_port = 587
+
 # Function to Send Email
 def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name, date_range, bat_speed_level=None, exit_velocity_level=None):
     # Create the email content
