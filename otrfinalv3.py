@@ -197,7 +197,7 @@ smtp_server = "smtp.gmail.com"
 smtp_port = 587
 
 # Function to Send Email
-def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name, date_range, bat_speed_level=None, exit_velocity_level=None):
+def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name, date_range, bat_speed_level, exit_velocity_level):
     # Create the email content
     msg = MIMEMultipart()
     msg['From'] = email_address
@@ -295,8 +295,15 @@ recipient_email = st.text_input("Enter Email Address")
 
 if st.button("Send Report"):
     if recipient_email:
-        # Send the email report with the player's name and date range
-        send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name, date_range)
+        # Send the email report with the player's name, date range, and levels
+        send_email_report(
+            recipient_email, 
+            bat_speed_metrics, 
+            exit_velocity_metrics, 
+            player_name, 
+            date_range, 
+            bat_speed_level,  # Pass bat speed level
+            exit_velocity_level  # Pass exit velocity level
+        )
     else:
         st.error("Please enter a valid email address.")
-
