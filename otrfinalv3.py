@@ -119,28 +119,35 @@ if bat_speed_file:
     )
 
 # Process Exit Velocity File (No rows skipped)
+# Process Exit Velocity File (No rows skipped)
 exit_velocity_metrics = None  # Initialize as None
 if exit_velocity_file:
     df_exit_velocity = pd.read_csv(exit_velocity_file)  # No rows are skipped here
-    exit_velocity_data = pd.to_numeric(df_exit_velocity.iloc[:, 7], errors='coerce')  # Column H: "Velo"
-    launch_angle_data = pd.to_numeric(df_exit_velocity.iloc[:, 8], errors='coerce')  # Column I: "LA"
-    distance_data = pd.to_numeric(df_exit_velocity.iloc[:, 9], errors='coerce')  # Column J: "Dist"
 
-    # Filter out rows where Exit Velocity is zero or NaN
-    non_zero_ev_rows = exit_velocity_data[exit_velocity_data > 0]
+    try:
+        # Ensure the file has enough columns for the required calculations
+        if len(df_exit_velocity.columns) > 9:  # Ensure at least 10 columns for "Velo", "LA", and "Dist"
+            exit_velocity_data = pd.to_numeric(df_exit_velocity.iloc[:, 7], errors='coerce')  # Column H: "Velo"
+            launch_angle_data = pd.to_numeric(df_exit_velocity.iloc[:, 8], errors='coerce')  # Column I: "LA"
+            distance_data = pd.to_numeric(df_exit_velocity.iloc[:, 9], errors='coerce')  # Column J: "Dist"
 
-    # Calculate Exit Velocity Metrics
-    exit_velocity_avg = non_zero_ev_rows.mean()
-    top_8_percent_exit_velocity = non_zero_ev_rows.quantile(0.92)
-    avg_launch_angle_top_8 = launch_angle_data[exit_velocity_data >= top_8_percent_exit_velocity].mean()
-    avg_distance_top_8 = distance_data[exit_velocity_data >= top_8_percent_exit_velocity].mean()
-    total_avg_launch_angle = launch_angle_data[launch_angle_data > 0].mean()
+            # Filter out rows where Exit Velocity is zero or NaN
+            non_zero_ev_rows = exit_velocity_data[exit_velocity_data > 0]
 
-    # Benchmarks for Exit Velocity
-    ev_benchmark = benchmarks[exit_velocity_level]["Avg EV"]
-    top_8_benchmark = benchmarks[exit_velocity_level]["Top 8th EV"]
-    la_benchmark = benchmarks[exit_velocity_level]["Avg LA"]
-    hhb_la_benchmark = benchmarks[exit_velocity_level]["HHB LA"]
+            # Only proceed if there is valid data
+            if not non_zero_ev_rows.empty:
+                # Calculate Exit Velocity Metrics
+                exit_velocity_avg = non_zero_ev_rows.mean()
+                top_8_percent_exit_velocity = non_zero_ev_rows.quantile(0.92)
+                avg_launch_angle_top_8 = launch_angle_data[exit_velocity_data >= top_8_percent_exit_velocity].mean()
+                avg_distance_top_8 = distance_data[exit_velocity_data >= top_8_percent_exit_velocity].mean()
+                total_avg_launch_angle = launch_angle_data[launch_angle_data > 0].mean()
+
+                # Benchmarks for Exit Velocity
+                ev_benchmark = benchmarks[exit_velocity_level]["Avg EV"]
+                top_8_benchmark = benchmarks[exit_velocity_level]["Top 8th EV"]
+                la_benchmark = benchmarks[exit_velocity_level]["Avg LA"]
+                hhb_la_benchmark = benchmarks[exit_velocity_level]["HHB LA"]
 
     # Format Exit Velocity Metrics
 exit_velocity_metrics = (
