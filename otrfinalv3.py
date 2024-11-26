@@ -178,13 +178,8 @@ if exit_velocity_metrics:
 player_name = st.text_input("Enter Player Name")
 date_range = st.text_input("Enter Date Range")
 
-# Email Configuration
-email_address = "otrdatatrack@gmail.com"  # Your email address
-email_password = "pslp fuab dmub cggo"  # Your app-specific password
-smtp_server = "smtp.gmail.com"
-smtp_port = 587
 # Function to Send Email
-def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name, date_range):
+def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name, date_range, bat_speed_level=None, exit_velocity_level=None):
     # Create the email content
     msg = MIMEMultipart()
     msg['From'] = email_address
@@ -198,8 +193,18 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics,
         <h2 style="color: black;">OTR Metrics Report</h2>
         <p style="color: black;"><strong>Player Name:</strong> {player_name}</p>
         <p style="color: black;"><strong>Date Range:</strong> {date_range}</p>
-        <p style="color: black;">The following data is constructed with benchmarks for each level.</p>
     """
+
+    # Dynamically add Bat Speed Level if Bat Speed Metrics are available
+    if bat_speed_metrics:
+        email_body += f"<p style='color: black;'><strong>Bat Speed Level:</strong> {bat_speed_level}</p>"
+    
+    # Dynamically add Exit Velocity Level if Exit Velocity Metrics are available
+    if exit_velocity_metrics:
+        email_body += f"<p style='color: black;'><strong>Exit Velocity Level:</strong> {exit_velocity_level}</p>"
+
+    # Add a general statement about benchmarks
+    email_body += "<p style='color: black;'>The following data is constructed with benchmarks for each level.</p>"
 
     # Check if Bat Speed Metrics are available
     if bat_speed_metrics:
@@ -256,7 +261,6 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics,
     email_body += "<p style='color: black;'>Best Regards,<br>OTR Baseball</p></body></html>"
 
     msg.attach(MIMEText(email_body, 'html'))
-
     # Send the email
     try:
         with smtplib.SMTP(smtp_server, smtp_port) as server:
