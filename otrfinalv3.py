@@ -12,9 +12,21 @@ st.write("Upload your Bat Speed and Exit Velocity CSV files to generate a compre
 bat_speed_file = st.file_uploader("Upload Bat Speed File", type="csv")
 exit_velocity_file = st.file_uploader("Upload Exit Velocity File", type="csv")
 
-# Ask for Player Level for Bat Speed and Exit Velocity
-bat_speed_level = st.selectbox("Select Player Level for Bat Speed", ["Youth", "High School", "College", "Indy", "Affiliate"])
-exit_velocity_level = st.selectbox("Select Player Level for Exit Velocity", ["10u", "12u", "14u", "JV/16u", "Var/18u", "College", "Indy", "Affiliate"])
+# Dropdown for Bat Speed Level
+bat_speed_level = st.selectbox(
+    "Select Player Level for Bat Speed", 
+    ["Youth", "High School", "College", "Indy", "Affiliate"]
+)
+
+# Dropdown for Exit Velocity Level
+exit_velocity_level = st.selectbox(
+    "Select Player Level for Exit Velocity", 
+    ["10u", "12u", "14u", "JV/16u", "Var/18u", "College", "Indy", "Affiliate"]
+)
+
+# Debugging: Ensure levels are selected correctly
+st.write(f"Selected Bat Speed Level: {bat_speed_level}")
+st.write(f"Selected Exit Velocity Level: {exit_velocity_level}")
 
 # Updated Benchmarks Based on Levels
 # Updated Benchmarks Based on Levels
