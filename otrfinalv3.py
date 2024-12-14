@@ -40,11 +40,11 @@ benchmarks = {
         "Avg LA": 12.14, "HHB LA": 8.78  # Youth benchmarks for launch angles
     },
     "14u": {
-        "Avg EV": 68.44, "Top 8th EV": 80,
+        "Avg EV": 68, "Top 8th EV": 80,
         "Avg LA": 12.14, "HHB LA": 8.78  # Youth benchmarks for launch angles
     },
     "JV/16u": {  # Match the dropdown value
-        "Avg EV": 76.25, "Top 8th EV": 85.0,  # New 16u benchmarks for Exit Velocity
+        "Avg EV": 72.65, "Top 8th EV": 85.0,  # New 16u benchmarks for Exit Velocity
         "Avg LA": 16.51, "HHB LA": 11.47  # Keeping existing High School benchmarks for launch angles
     },
     "Var/18u": {  # Match the dropdown value
