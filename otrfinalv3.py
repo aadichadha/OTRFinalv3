@@ -74,7 +74,7 @@ benchmarks = {
 }
 def evaluate_performance(metric, benchmark, lower_is_better=False, special_metric=False):
     if special_metric:  # Special handling for Exit Velocity and Top 8% Exit Velocity
-        if metric >= benchmark - 3 and metric <= benchmark:  # Within or less than 3 mph below the benchmark
+        if benchmark - 3 <= metric <= benchmark:  # Within 3 mph below the benchmark
             return "Average"
         elif metric < benchmark - 3:  # More than 3 mph below the benchmark
             return "Below Average"
@@ -95,6 +95,7 @@ def evaluate_performance(metric, benchmark, lower_is_better=False, special_metri
                 return "Average"
             else:  # More than 10% lower is "Below Average"
                 return "Below Average"
+
 
 # Process Bat Speed File (Skip the first 8 rows)
 bat_speed_metrics = None  # Initialize as None
