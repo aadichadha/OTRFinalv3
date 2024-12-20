@@ -73,8 +73,7 @@ benchmarks = {
 }
 
 def evaluate_performance(metric, benchmark, lower_is_better=False, special_metric=False):
-    if special_metric:
-        # Special handling for Exit Velocity
+    if special_metric:  # Special handling for Exit Velocity and Top 8% Exit Velocity
         if benchmark - 3 <= metric <= benchmark:
             return "Average"
         elif metric < benchmark - 3:
@@ -127,19 +126,21 @@ if bat_speed_file:
         f"  - Player Grade: {evaluate_performance(avg_time_to_contact, time_to_contact_benchmark, lower_is_better=True)}\n"
     )
 
-# Process Exit Velocity File
+# Process Exit Velocity File (No rows skipped)
 exit_velocity_metrics = None
 strike_zone_html = ""
 if exit_velocity_file:
     df_exit_velocity = pd.read_csv(exit_velocity_file)
+
     try:
-        required_columns = ["Velo", "LA", "Dist", "Strike Zone"]
-        if all(col in df_exit_velocity.columns for col in required_columns):
-            exit_velocity_data = pd.to_numeric(df_exit_velocity["Velo"], errors='coerce')
-            launch_angle_data = pd.to_numeric(df_exit_velocity["LA"], errors='coerce')
-            distance_data = pd.to_numeric(df_exit_velocity["Dist"], errors='coerce')
-            # Strike Zone data as is
-            strike_zone_data = df_exit_velocity["Strike Zone"]
+        # Ensure the file has enough columns
+        # Based on your specification: F = 5 (Strike Zone), H = 7 (Velo), I = 8 (LA), J = 9 (Dist)
+        # We already know columns are standard, so just read directly
+        if len(df_exit_velocity.columns) > 9:
+            strike_zone_data = df_exit_velocity.iloc[:, 5]  # Column F: Strike Zone
+            exit_velocity_data = pd.to_numeric(df_exit_velocity.iloc[:, 7], errors='coerce')  # Column H: Velo
+            launch_angle_data = pd.to_numeric(df_exit_velocity.iloc[:, 8], errors='coerce')   # Column I: LA
+            distance_data = pd.to_numeric(df_exit_velocity.iloc[:, 9], errors='coerce')       # Column J: Dist
 
             # Filter out rows where Exit Velocity is zero or NaN
             non_zero_ev_rows = exit_velocity_data[exit_velocity_data > 0]
@@ -148,11 +149,11 @@ if exit_velocity_file:
                 # Calculate Exit Velocity Metrics
                 exit_velocity_avg = non_zero_ev_rows.mean()
                 top_8_percent_exit_velocity = non_zero_ev_rows.quantile(0.92)
-
                 avg_launch_angle_top_8 = launch_angle_data[exit_velocity_data >= top_8_percent_exit_velocity].mean()
                 avg_distance_top_8 = distance_data[exit_velocity_data >= top_8_percent_exit_velocity].mean()
                 total_avg_launch_angle = launch_angle_data[launch_angle_data > 0].mean()
 
+                # Benchmarks for Exit Velocity
                 ev_benchmark = benchmarks[exit_velocity_level]["Avg EV"]
                 top_8_benchmark = benchmarks[exit_velocity_level]["Top 8th EV"]
                 la_benchmark = benchmarks[exit_velocity_level]["Avg LA"]
@@ -172,7 +173,11 @@ if exit_velocity_file:
                 )
 
                 # Compute top 8% EV per zone
-                zone_stats = df_exit_velocity.groupby("Strike Zone")["Velo"].quantile(0.92)
+                zone_df = df_exit_velocity.copy()
+                zone_df["Velo"] = pd.to_numeric(zone_df.iloc[:, 7], errors='coerce')
+                zone_df["StrikeZone"] = zone_df.iloc[:, 5]  # Another reference with a clear name
+
+                zone_stats = zone_df.groupby("StrikeZone")["Velo"].quantile(0.92)
 
                 # Extract each zone value
                 z1 = zone_stats.get(1, None)
@@ -213,7 +218,7 @@ if exit_velocity_file:
             else:
                 st.error("No valid Exit Velocity data found in the file. Please check the data.")
         else:
-            st.error("The uploaded file does not have the required columns (Velo, LA, Dist, Strike Zone).")
+            st.error("The uploaded file does not have the required columns for Exit Velocity.")
     except Exception as e:
         st.error(f"An error occurred while processing the Exit Velocity file: {e}")
 
@@ -229,12 +234,13 @@ player_name = st.text_input("Enter Player Name")
 date_range = st.text_input("Enter Date Range")
 
 # Email Configuration
-email_address = "otrdatatrack@gmail.com"  # Your email address
-email_password = "pslp fuab dmub cggo"  # Your app-specific password
+email_address = "otrdatatrack@gmail.com"
+email_password = "pslp fuab dmub cggo"
 smtp_server = "smtp.gmail.com"
 smtp_port = 587
 
-def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name, date_range, bat_speed_level, exit_velocity_level, strike_zone_html):
+# Function to Send Email
+def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name, date_range, bat_speed_level, exit_velocity_level):
     msg = MIMEMultipart()
     msg['From'] = email_address
     msg['To'] = recipient_email
@@ -250,17 +256,13 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics,
 
     if bat_speed_metrics:
         email_body += f"<p style='color: black;'><strong>Bat Speed Level:</strong> {bat_speed_level}</p>"
-
     if exit_velocity_metrics:
         email_body += f"<p style='color: black;'><strong>Exit Velocity Level:</strong> {exit_velocity_level}</p>"
 
     email_body += "<p style='color: black;'>The following data is constructed with benchmarks for each level.</p>"
 
+    # Insert Bat Speed Metrics into email
     if bat_speed_metrics:
-        # Use the already computed metrics variables (player_avg_bat_speed, etc.) from the bat speed section
-        # We'll need to access them here or recalculate if needed. Because they're only defined above,
-        # we can just trust that this code runs after processing. If needed, store them as global or pass them.
-        # For brevity, we reuse the variables directly here as they are defined above.
         email_body += f"""
         <h3 style="color: black;">Bat Speed Metrics</h3>
         <p><strong>Player Average Bat Speed:</strong> {player_avg_bat_speed:.2f} mph (Benchmark: {bat_speed_benchmark} mph)
@@ -276,8 +278,8 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics,
         <br>Player Grade: {evaluate_performance(avg_time_to_contact, time_to_contact_benchmark, lower_is_better=True)}</p>
         """
 
+    # Insert Exit Velocity Metrics into email
     if exit_velocity_metrics:
-        # Same assumption as above: the variables computed for EV are still in scope.
         email_body += f"""
         <h3 style="color: black;">Exit Velocity Metrics</h3>
         <p><strong>Average Exit Velocity:</strong> {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)
@@ -299,7 +301,6 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics,
         email_body += strike_zone_html
 
     email_body += "<p style='color: black;'>Best Regards,<br>OTR Baseball</p></body></html>"
-
     msg.attach(MIMEText(email_body, 'html'))
 
     try:
@@ -323,8 +324,8 @@ if st.button("Send Report"):
             player_name, 
             date_range, 
             bat_speed_level,  
-            exit_velocity_level,
-            strike_zone_html
+            exit_velocity_level
         )
     else:
         st.error("Please enter a valid email address.")
+
