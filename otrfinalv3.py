@@ -1,8 +1,14 @@
 import streamlit as st
 import pandas as pd
 import smtplib
+import base64
+from io import BytesIO
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Title and Introduction
 st.title("OTR Baseball Metrics Analyzer")
@@ -14,13 +20,13 @@ exit_velocity_file = st.file_uploader("Upload Exit Velocity File", type="csv")
 
 # Dropdown for Bat Speed Level
 bat_speed_level = st.selectbox(
-    "Select Player Level for Bat Speed", 
+    "Select Player Level for Bat Speed",
     ["Youth", "High School", "College", "Indy", "Affiliate"]
 )
 
 # Dropdown for Exit Velocity Level
 exit_velocity_level = st.selectbox(
-    "Select Player Level for Exit Velocity", 
+    "Select Player Level for Exit Velocity",
     ["10u", "12u", "14u", "JV/16u", "Var/18u", "College", "Indy", "Affiliate"]
 )
 
@@ -28,7 +34,6 @@ exit_velocity_level = st.selectbox(
 st.write(f"Selected Bat Speed Level: {bat_speed_level}")
 st.write(f"Selected Exit Velocity Level: {exit_velocity_level}")
 
-# Benchmarks
 benchmarks = {
     "10u": {
         "Avg EV": 50, "Top 8th EV": 61,
@@ -73,7 +78,7 @@ benchmarks = {
 }
 
 def evaluate_performance(metric, benchmark, lower_is_better=False, special_metric=False):
-    if special_metric:  # Special handling for Exit Velocity and Top 8% Exit Velocity
+    if special_metric:
         if benchmark - 3 <= metric <= benchmark:
             return "Average"
         elif metric < benchmark - 3:
@@ -128,32 +133,34 @@ if bat_speed_file:
 
 # Process Exit Velocity File (No rows skipped)
 exit_velocity_metrics = None
-strike_zone_html = ""
+strike_zone_img_html = ""  # We'll embed an image of the strike zone
 if exit_velocity_file:
     df_exit_velocity = pd.read_csv(exit_velocity_file)
-
     try:
-        # Ensure the file has enough columns
-        # Based on your specification: F = 5 (Strike Zone), H = 7 (Velo), I = 8 (LA), J = 9 (Dist)
-        # We already know columns are standard, so just read directly
-        if len(df_exit_velocity.columns) > 9:
-            strike_zone_data = df_exit_velocity.iloc[:, 5]  # Column F: Strike Zone
-            exit_velocity_data = pd.to_numeric(df_exit_velocity.iloc[:, 7], errors='coerce')  # Column H: Velo
-            launch_angle_data = pd.to_numeric(df_exit_velocity.iloc[:, 8], errors='coerce')   # Column I: LA
-            distance_data = pd.to_numeric(df_exit_velocity.iloc[:, 9], errors='coerce')       # Column J: Dist
+        # Based on your instructions:
+        # Strike Zone = Column F (Index 5)
+        # Velo = Column H (Index 7)
+        # LA = Column I (Index 8)
+        # Dist = Column J (Index 9)
 
-            # Filter out rows where Exit Velocity is zero or NaN
+        if len(df_exit_velocity.columns) > 9:
+            strike_zone_data = df_exit_velocity.iloc[:, 5]   # Column F: Strike Zone
+            exit_velocity_data = pd.to_numeric(df_exit_velocity.iloc[:, 7], errors='coerce')  # H: Velo
+            launch_angle_data = pd.to_numeric(df_exit_velocity.iloc[:, 8], errors='coerce')   # I: LA
+            distance_data = pd.to_numeric(df_exit_velocity.iloc[:, 9], errors='coerce')       # J: Dist
+
             non_zero_ev_rows = exit_velocity_data[exit_velocity_data > 0]
 
             if not non_zero_ev_rows.empty:
                 # Calculate Exit Velocity Metrics
                 exit_velocity_avg = non_zero_ev_rows.mean()
                 top_8_percent_exit_velocity = non_zero_ev_rows.quantile(0.92)
-                avg_launch_angle_top_8 = launch_angle_data[exit_velocity_data >= top_8_percent_exit_velocity].mean()
-                avg_distance_top_8 = distance_data[exit_velocity_data >= top_8_percent_exit_velocity].mean()
+
+                top_8_mask = exit_velocity_data >= top_8_percent_exit_velocity
+                avg_launch_angle_top_8 = launch_angle_data[top_8_mask].mean()
+                avg_distance_top_8 = distance_data[top_8_mask].mean()
                 total_avg_launch_angle = launch_angle_data[launch_angle_data > 0].mean()
 
-                # Benchmarks for Exit Velocity
                 ev_benchmark = benchmarks[exit_velocity_level]["Avg EV"]
                 top_8_benchmark = benchmarks[exit_velocity_level]["Top 8th EV"]
                 la_benchmark = benchmarks[exit_velocity_level]["Avg LA"]
@@ -172,49 +179,83 @@ if exit_velocity_file:
                     f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
                 )
 
-                # Compute top 8% EV per zone
-                zone_df = df_exit_velocity.copy()
-                zone_df["Velo"] = pd.to_numeric(zone_df.iloc[:, 7], errors='coerce')
-                zone_df["StrikeZone"] = zone_df.iloc[:, 5]  # Another reference with a clear name
+                # Compute frequency of top 8% EV in each zone
+                top_8_df = df_exit_velocity[top_8_mask].copy()
+                top_8_df["StrikeZone"] = top_8_df.iloc[:, 5]
+                zone_counts = top_8_df["StrikeZone"].value_counts()
 
-                zone_stats = zone_df.groupby("StrikeZone")["Velo"].quantile(0.92)
+                # Zones of interest: 10,11 on top; 1-9 in middle; 12,13 at bottom
+                # Layout (rows x columns):
+                # Row 1: 10 (left), blank, 11 (right)
+                # Row 2: 1,2,3
+                # Row 3: 4,5,6
+                # Row 4: 7,8,9
+                # Row 5: 12 (left), blank, 13 (right)
 
-                # Extract each zone value
-                z1 = zone_stats.get(1, None)
-                z2 = zone_stats.get(2, None)
-                z3 = zone_stats.get(3, None)
-                z4 = zone_stats.get(4, None)
-                z5 = zone_stats.get(5, None)
-                z6 = zone_stats.get(6, None)
-                z7 = zone_stats.get(7, None)
-                z8 = zone_stats.get(8, None)
-                z9 = zone_stats.get(9, None)
-                z10 = zone_stats.get(10, None)
-                z11 = zone_stats.get(11, None)
-                z12 = zone_stats.get(12, None)
-                z13 = zone_stats.get(13, None)
+                # To visualize, we'll define the positions in a grid (5 rows x 3 columns)
+                # We'll place empty cells where there's no zone.
+                # Grid (R=row, C=col):
+                # R1: [10, None, 11]
+                # R2: [1, 2, 3]
+                # R3: [4, 5, 6]
+                # R4: [7, 8, 9]
+                # R5: [12, None, 13]
 
-                # Construct HTML for strike zone graphic
-                strike_zone_html = f"""
-                <h3>Strike Zone Top 8% Exit Velocities</h3>
-                <table style="border-collapse: collapse; margin: 20px 0; text-align:center;">
-                  <tr>
-                    <td></td><td>{z11 if z11 else ''}</td><td></td><td>{z10 if z10 else ''}</td><td></td>
-                  </tr>
-                  <tr>
-                    <td></td><td>{z3 if z3 else ''}</td><td>{z2 if z2 else ''}</td><td>{z1 if z1 else ''}</td><td></td>
-                  </tr>
-                  <tr>
-                    <td></td><td>{z6 if z6 else ''}</td><td>{z5 if z5 else ''}</td><td>{z4 if z4 else ''}</td><td></td>
-                  </tr>
-                  <tr>
-                    <td></td><td>{z9 if z9 else ''}</td><td>{z8 if z8 else ''}</td><td>{z7 if z7 else ''}</td><td></td>
-                  </tr>
-                  <tr>
-                    <td></td><td>{z13 if z13 else ''}</td><td></td><td>{z12 if z12 else ''}</td><td></td>
-                  </tr>
-                </table>
-                """
+                # Define the layout
+                zone_layout = [
+                    [10, None, 11],
+                    [1,   2,    3],
+                    [4,   5,    6],
+                    [7,   8,    9],
+                    [12, None, 13]
+                ]
+
+                # Get max count for normalization
+                max_count = zone_counts.max() if not zone_counts.empty else 0
+
+                # Create a figure with matplotlib
+                fig, ax = plt.subplots(figsize=(3,5))
+                ax.axis('off')
+
+                # Create a colormap from white to red
+                cmap = plt.get_cmap('Reds')
+                # We'll map frequency to a [0,1] range: no hits = white, max hits = deep red.
+
+                # Plot each cell as a colored rectangle with the zone number
+                cell_width = 1.0
+                cell_height = 1.0
+
+                # Start from top: y=0 downwards
+                for r, row_zones in enumerate(zone_layout):
+                    for c, z in enumerate(row_zones):
+                        x = c * cell_width
+                        y = (len(zone_layout)-1 - r) * cell_height  # invert y to start top at top
+                        if z is not None:
+                            count = zone_counts.get(z, 0)
+                            norm_val = (count / max_count) if max_count > 0 else 0
+                            color = cmap(norm_val * 0.8 + 0.2) if norm_val > 0 else (1,1,1,1) # more white if no hits
+                            rect = plt.Rectangle((x, y), cell_width, cell_height, facecolor=color, edgecolor='black')
+                            ax.add_patch(rect)
+                            # Add text (zone number)
+                            ax.text(x+0.5*cell_width, y+0.5*cell_height, str(z), ha='center', va='center', fontsize=10, color='black')
+                        else:
+                            # Just a blank cell
+                            rect = plt.Rectangle((x, y), cell_width, cell_height, facecolor='white', edgecolor='black')
+                            ax.add_patch(rect)
+
+                # Adjust the limits to fit all cells
+                ax.set_xlim(0, 3*cell_width)
+                ax.set_ylim(0, 5*cell_height)
+
+                # Convert figure to base64
+                buf = BytesIO()
+                plt.savefig(buf, format='png', bbox_inches='tight')
+                buf.seek(0)
+                img_data = base64.b64encode(buf.read()).decode('utf-8')
+                plt.close(fig)
+
+                strike_zone_img_html = f"<h3>Strike Zone Top 8% Exit Velocities</h3><img src='data:image/png;base64,{img_data}'/>"
+
             else:
                 st.error("No valid Exit Velocity data found in the file. Please check the data.")
         else:
@@ -228,19 +269,19 @@ if bat_speed_metrics:
     st.markdown(bat_speed_metrics)
 if exit_velocity_metrics:
     st.markdown(exit_velocity_metrics)
+    if strike_zone_img_html:
+        st.markdown(strike_zone_img_html, unsafe_allow_html=True)
 
-# Player Name and Date Range Input
 player_name = st.text_input("Enter Player Name")
 date_range = st.text_input("Enter Date Range")
 
 # Email Configuration
-email_address = "otrdatatrack@gmail.com"
-email_password = "pslp fuab dmub cggo"
+email_address = "otrdatatrack@gmail.com"  # Your email address
+email_password = "pslp fuab dmub cggo"  # Your app-specific password
 smtp_server = "smtp.gmail.com"
 smtp_port = 587
 
-# Function to Send Email
-def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name, date_range, bat_speed_level, exit_velocity_level):
+def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics, player_name, date_range, bat_speed_level, exit_velocity_level, strike_zone_img_html):
     msg = MIMEMultipart()
     msg['From'] = email_address
     msg['To'] = recipient_email
@@ -261,7 +302,6 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics,
 
     email_body += "<p style='color: black;'>The following data is constructed with benchmarks for each level.</p>"
 
-    # Insert Bat Speed Metrics into email
     if bat_speed_metrics:
         email_body += f"""
         <h3 style="color: black;">Bat Speed Metrics</h3>
@@ -278,7 +318,6 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics,
         <br>Player Grade: {evaluate_performance(avg_time_to_contact, time_to_contact_benchmark, lower_is_better=True)}</p>
         """
 
-    # Insert Exit Velocity Metrics into email
     if exit_velocity_metrics:
         email_body += f"""
         <h3 style="color: black;">Exit Velocity Metrics</h3>
@@ -295,12 +334,11 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics,
         <br>Player Grade: {evaluate_performance(total_avg_launch_angle, la_benchmark)}</p>
 
         <p><strong>Average Distance (8% swings):</strong> {avg_distance_top_8:.2f} ft</p>
+        {strike_zone_img_html}
         """
 
-        # Add the strike zone graphic HTML
-        email_body += strike_zone_html
-
     email_body += "<p style='color: black;'>Best Regards,<br>OTR Baseball</p></body></html>"
+
     msg.attach(MIMEText(email_body, 'html'))
 
     try:
@@ -318,14 +356,16 @@ recipient_email = st.text_input("Enter Email Address")
 if st.button("Send Report"):
     if recipient_email:
         send_email_report(
-            recipient_email, 
-            bat_speed_metrics, 
-            exit_velocity_metrics, 
-            player_name, 
-            date_range, 
-            bat_speed_level,  
-            exit_velocity_level
+            recipient_email,
+            bat_speed_metrics,
+            exit_velocity_metrics,
+            player_name,
+            date_range,
+            bat_speed_level,
+            exit_velocity_level,
+            strike_zone_img_html
         )
     else:
         st.error("Please enter a valid email address.")
+
 
