@@ -74,6 +74,7 @@ benchmarks = {
 
 def evaluate_performance(metric, benchmark, lower_is_better=False, special_metric=False):
     if special_metric:
+        # Special handling for Exit Velocity
         if benchmark - 3 <= metric <= benchmark:
             return "Average"
         elif metric < benchmark - 3:
@@ -100,9 +101,9 @@ def evaluate_performance(metric, benchmark, lower_is_better=False, special_metri
 bat_speed_metrics = None
 if bat_speed_file:
     df_bat_speed = pd.read_csv(bat_speed_file, skiprows=8)
-    bat_speed_data = pd.to_numeric(df_bat_speed.iloc[:, 7], errors='coerce')  # Column H: "Bat Speed (mph)"
-    attack_angle_data = pd.to_numeric(df_bat_speed.iloc[:, 10], errors='coerce')  # Column K: "Attack Angle (deg)"
-    time_to_contact_data = pd.to_numeric(df_bat_speed.iloc[:, 15], errors='coerce')  # Column: "Time to Contact (sec)"
+    bat_speed_data = pd.to_numeric(df_bat_speed.iloc[:, 7], errors='coerce')  # Column H: Bat Speed
+    attack_angle_data = pd.to_numeric(df_bat_speed.iloc[:, 10], errors='coerce')  # Column K: Attack Angle
+    time_to_contact_data = pd.to_numeric(df_bat_speed.iloc[:, 15], errors='coerce')  # Time to Contact
 
     player_avg_bat_speed = bat_speed_data.mean()
     top_10_percent_bat_speed = bat_speed_data.quantile(0.90)
@@ -126,24 +127,28 @@ if bat_speed_file:
         f"  - Player Grade: {evaluate_performance(avg_time_to_contact, time_to_contact_benchmark, lower_is_better=True)}\n"
     )
 
-# Process Exit Velocity File (No rows skipped)
+# Process Exit Velocity File
 exit_velocity_metrics = None
 strike_zone_html = ""
 if exit_velocity_file:
     df_exit_velocity = pd.read_csv(exit_velocity_file)
     try:
-        if "Velo" in df_exit_velocity.columns and "LA" in df_exit_velocity.columns and "Dist" in df_exit_velocity.columns and "Strike Zone" in df_exit_velocity.columns:
+        required_columns = ["Velo", "LA", "Dist", "Strike Zone"]
+        if all(col in df_exit_velocity.columns for col in required_columns):
             exit_velocity_data = pd.to_numeric(df_exit_velocity["Velo"], errors='coerce')
             launch_angle_data = pd.to_numeric(df_exit_velocity["LA"], errors='coerce')
             distance_data = pd.to_numeric(df_exit_velocity["Dist"], errors='coerce')
+            # Strike Zone data as is
             strike_zone_data = df_exit_velocity["Strike Zone"]
 
+            # Filter out rows where Exit Velocity is zero or NaN
             non_zero_ev_rows = exit_velocity_data[exit_velocity_data > 0]
 
             if not non_zero_ev_rows.empty:
-                # Exit Velocity Metrics
+                # Calculate Exit Velocity Metrics
                 exit_velocity_avg = non_zero_ev_rows.mean()
                 top_8_percent_exit_velocity = non_zero_ev_rows.quantile(0.92)
+
                 avg_launch_angle_top_8 = launch_angle_data[exit_velocity_data >= top_8_percent_exit_velocity].mean()
                 avg_distance_top_8 = distance_data[exit_velocity_data >= top_8_percent_exit_velocity].mean()
                 total_avg_launch_angle = launch_angle_data[launch_angle_data > 0].mean()
@@ -185,15 +190,6 @@ if exit_velocity_file:
                 z13 = zone_stats.get(13, None)
 
                 # Construct HTML for strike zone graphic
-                # Layout:
-                #      11(top left)          10(top right)
-                #
-                #            3    2    1
-                #            6    5    4
-                #            9    8    7
-                #
-                #      13(bottom left)    12(bottom right)
-                #
                 strike_zone_html = f"""
                 <h3>Strike Zone Top 8% Exit Velocities</h3>
                 <table style="border-collapse: collapse; margin: 20px 0; text-align:center;">
@@ -221,19 +217,19 @@ if exit_velocity_file:
     except Exception as e:
         st.error(f"An error occurred while processing the Exit Velocity file: {e}")
 
-# Display Results in Streamlit
+# Display Results
 st.write("## Calculated Metrics")
 if bat_speed_metrics:
     st.markdown(bat_speed_metrics)
 if exit_velocity_metrics:
     st.markdown(exit_velocity_metrics)
 
-# Player Name and Date Range
+# Player Name and Date Range Input
 player_name = st.text_input("Enter Player Name")
 date_range = st.text_input("Enter Date Range")
 
 # Email Configuration
-email_address = "otrdatatrack@gmail.com"  # Your email
+email_address = "otrdatatrack@gmail.com"  # Your email address
 email_password = "pslp fuab dmub cggo"  # Your app-specific password
 smtp_server = "smtp.gmail.com"
 smtp_port = 587
@@ -254,14 +250,17 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics,
 
     if bat_speed_metrics:
         email_body += f"<p style='color: black;'><strong>Bat Speed Level:</strong> {bat_speed_level}</p>"
-    
+
     if exit_velocity_metrics:
         email_body += f"<p style='color: black;'><strong>Exit Velocity Level:</strong> {exit_velocity_level}</p>"
 
     email_body += "<p style='color: black;'>The following data is constructed with benchmarks for each level.</p>"
 
-    # If bat speed metrics exist, add them
     if bat_speed_metrics:
+        # Use the already computed metrics variables (player_avg_bat_speed, etc.) from the bat speed section
+        # We'll need to access them here or recalculate if needed. Because they're only defined above,
+        # we can just trust that this code runs after processing. If needed, store them as global or pass them.
+        # For brevity, we reuse the variables directly here as they are defined above.
         email_body += f"""
         <h3 style="color: black;">Bat Speed Metrics</h3>
         <p><strong>Player Average Bat Speed:</strong> {player_avg_bat_speed:.2f} mph (Benchmark: {bat_speed_benchmark} mph)
@@ -277,8 +276,8 @@ def send_email_report(recipient_email, bat_speed_metrics, exit_velocity_metrics,
         <br>Player Grade: {evaluate_performance(avg_time_to_contact, time_to_contact_benchmark, lower_is_better=True)}</p>
         """
 
-    # If exit velocity metrics exist, add them
     if exit_velocity_metrics:
+        # Same assumption as above: the variables computed for EV are still in scope.
         email_body += f"""
         <h3 style="color: black;">Exit Velocity Metrics</h3>
         <p><strong>Average Exit Velocity:</strong> {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)
@@ -325,7 +324,7 @@ if st.button("Send Report"):
             date_range, 
             bat_speed_level,  
             exit_velocity_level,
-            strike_zone_html  # Pass the strike zone html here
+            strike_zone_html
         )
     else:
         st.error("Please enter a valid email address.")
