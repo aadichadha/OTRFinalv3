@@ -3,15 +3,21 @@ import pandas as pd
 import smtplib
 import base64
 from io import BytesIO
+
+# Email libraries
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+
 import matplotlib
 matplotlib.use('Agg')  # Use a non-interactive backend
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Title and Introduction
-st.title("OTR Baseball Metrics Analyzer")
+# ---------------------------------------------------------
+# STREAMLIT UI: Title and Introduction
+# ---------------------------------------------------------
+st.title("OTR Baseball Metrics Analyzer (CID Approach)")
 st.write("Upload your Bat Speed and Exit Velocity CSV files to generate a comprehensive report.")
 
 # File Uploads
@@ -30,10 +36,13 @@ exit_velocity_level = st.selectbox(
     ["10u", "12u", "14u", "JV/16u", "Var/18u", "College", "Indy", "Affiliate"]
 )
 
-# Debug: Show chosen levels
+# Debugging: Ensure levels are selected correctly
 st.write(f"Selected Bat Speed Level: {bat_speed_level}")
 st.write(f"Selected Exit Velocity Level: {exit_velocity_level}")
 
+# ---------------------------------------------------------
+# BENCHMARKS
+# ---------------------------------------------------------
 benchmarks = {
     "10u": {
         "Avg EV": 50, "Top 8th EV": 61,
@@ -89,7 +98,7 @@ def evaluate_performance(metric, benchmark, lower_is_better=False, special_metri
     for "Average" (useful for exit velocity).
     """
     if special_metric:
-        # For EV, let's say "Average" if in [benchmark-3, benchmark]
+        # For EV: "Average" if within 3 mph below the benchmark
         if benchmark - 3 <= metric <= benchmark:
             return "Average"
         elif metric < benchmark - 3:
@@ -98,6 +107,7 @@ def evaluate_performance(metric, benchmark, lower_is_better=False, special_metri
             return "Above Average"
     else:
         if lower_is_better:
+            # For Time to Contact: smaller is better
             if metric < benchmark:
                 return "Above Average"
             elif metric <= benchmark * 1.1:
@@ -105,6 +115,7 @@ def evaluate_performance(metric, benchmark, lower_is_better=False, special_metri
             else:
                 return "Below Average"
         else:
+            # For speeds, angles, etc.: bigger is better
             if metric > benchmark:
                 return "Above Average"
             elif metric >= benchmark * 0.9:
@@ -112,21 +123,22 @@ def evaluate_performance(metric, benchmark, lower_is_better=False, special_metri
             else:
                 return "Below Average"
 
-# Variables to store results
+# ---------------------------------------------------------
+# GLOBALS for storing final metrics & image data
+# ---------------------------------------------------------
 bat_speed_metrics = None
 exit_velocity_metrics = None
-strike_zone_img_data = None  # Base64 string for our heatmap
+strike_zone_img_data = None  # We'll store Base64 for the heatmap here
 
-# ----------------------
-# PROCESS BAT SPEED FILE
-# ----------------------
+# ---------------------------------------------------------
+# PROCESS BAT SPEED FILE (Skip the first 8 rows)
+# ---------------------------------------------------------
 if bat_speed_file:
     df_bat_speed = pd.read_csv(bat_speed_file, skiprows=8)
-    bat_speed_data = pd.to_numeric(df_bat_speed.iloc[:, 7], errors='coerce')   # Column H
-    attack_angle_data = pd.to_numeric(df_bat_speed.iloc[:, 10], errors='coerce')  # Column K
-    time_to_contact_data = pd.to_numeric(df_bat_speed.iloc[:, 15], errors='coerce')  # Column P, check your CSV
+    bat_speed_data = pd.to_numeric(df_bat_speed.iloc[:, 7], errors='coerce')  # Column H: Bat Speed
+    attack_angle_data = pd.to_numeric(df_bat_speed.iloc[:, 10], errors='coerce')  # Column K: Attack Angle
+    time_to_contact_data = pd.to_numeric(df_bat_speed.iloc[:, 15], errors='coerce')  # Column P (check your CSV)
 
-    # Calculate relevant metrics
     player_avg_bat_speed = bat_speed_data.mean()
     top_10_percent_bat_speed = bat_speed_data.quantile(0.90)
     avg_attack_angle_top_10 = attack_angle_data[bat_speed_data >= top_10_percent_bat_speed].mean()
@@ -138,7 +150,7 @@ if bat_speed_file:
     time_to_contact_benchmark = benchmarks[bat_speed_level]["Avg TimeToContact"]
     attack_angle_benchmark = benchmarks[bat_speed_level]["Avg AttackAngle"]
 
-    # Build the metrics text
+    # Build a markdown text chunk for the final report
     bat_speed_metrics = (
         "### Bat Speed Metrics\n"
         f"- **Player Average Bat Speed:** {player_avg_bat_speed:.2f} mph (Benchmark: {bat_speed_benchmark} mph)\n"
@@ -151,17 +163,17 @@ if bat_speed_file:
         f"  - Player Grade: {evaluate_performance(avg_time_to_contact, time_to_contact_benchmark, lower_is_better=True)}\n"
     )
 
-# ----------------------------
-# PROCESS EXIT VELOCITY FILE
-# ----------------------------
+# ---------------------------------------------------------
+# PROCESS EXIT VELOCITY FILE (No rows skipped)
+# ---------------------------------------------------------
 if exit_velocity_file:
     df_exit_velocity = pd.read_csv(exit_velocity_file)
     try:
-        # According to the instructions:
-        # Column F (index 5) = Strike Zone
-        # Column H (index 7) = Velo
-        # Column I (index 8) = LA
-        # Column J (index 9) = Dist
+        # According to instructions:
+        # Column F (Index 5) = Strike Zone
+        # Column H (Index 7) = EV
+        # Column I (Index 8) = LA
+        # Column J (Index 9) = Dist
 
         if len(df_exit_velocity.columns) > 9:
             strike_zone_data = df_exit_velocity.iloc[:, 5]
@@ -169,9 +181,10 @@ if exit_velocity_file:
             launch_angle_data = pd.to_numeric(df_exit_velocity.iloc[:, 8], errors='coerce')
             distance_data = pd.to_numeric(df_exit_velocity.iloc[:, 9], errors='coerce')
 
+            # Filter out zero or invalid EV rows
             non_zero_ev_rows = exit_velocity_data[exit_velocity_data > 0]
             if not non_zero_ev_rows.empty:
-                # Calculate exit velocity metrics
+                # Calculate metrics
                 exit_velocity_avg = non_zero_ev_rows.mean()
                 top_8_percent_exit_velocity = non_zero_ev_rows.quantile(0.92)
 
@@ -186,26 +199,26 @@ if exit_velocity_file:
                 la_benchmark = benchmarks[exit_velocity_level]["Avg LA"]
                 hhb_la_benchmark = benchmarks[exit_velocity_level]["HHB LA"]
 
+                # Build text for the final metrics
                 exit_velocity_metrics = (
                     "### Exit Velocity Metrics\n"
-                    f"- **Average Exit Velocity:** {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)\n"
+                    f"- **Average Exit Velocity (Non-zero EV):** {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)\n"
                     f"  - Player Grade: {evaluate_performance(exit_velocity_avg, ev_benchmark, special_metric=True)}\n"
                     f"- **Top 8% Exit Velocity:** {top_8_percent_exit_velocity:.2f} mph (Benchmark: {top_8_benchmark} mph)\n"
                     f"  - Player Grade: {evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark, special_metric=True)}\n"
-                    f"- **Average Launch Angle (On Top 8% Exit Velocity Swings):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
+                    f"- **Average Launch Angle (On Top 8% EV Swings):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
                     f"  - Player Grade: {evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark)}\n"
                     f"- **Total Average Launch Angle (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
                     f"  - Player Grade: {evaluate_performance(total_avg_launch_angle, la_benchmark)}\n"
                     f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
                 )
 
-                # -------------
-                # STRIKE ZONE PLOT
-                # -------------
+                # -------- Create Strike-Zone Heatmap ----------
                 top_8_df = df_exit_velocity[top_8_mask].copy()
-                top_8_df["StrikeZone"] = top_8_df.iloc[:, 5]
+                top_8_df["StrikeZone"] = top_8_df.iloc[:, 5]  # Column F
                 zone_counts = top_8_df["StrikeZone"].value_counts()
 
+                # Layout
                 zone_layout = [
                     [10, None, 11],
                     [1,   2,    3],
@@ -213,39 +226,38 @@ if exit_velocity_file:
                     [7,   8,    9],
                     [12, None, 13]
                 ]
-
                 max_count = zone_counts.max() if not zone_counts.empty else 0
 
+                # Plot with matplotlib
                 fig, ax = plt.subplots(figsize=(3,5))
                 ax.axis('off')
                 cmap = plt.get_cmap('Reds')
                 cell_width = 1.0
                 cell_height = 1.0
 
-                # Draw each cell
                 for r, row_zones in enumerate(zone_layout):
                     for c, z in enumerate(row_zones):
                         x = c * cell_width
-                        y = (len(zone_layout)-1 - r) * cell_height  # flip vertical
+                        y = (len(zone_layout)-1 - r) * cell_height
                         if z is not None:
                             count = zone_counts.get(z, 0)
                             norm_val = (count / max_count) if max_count > 0 else 0
                             color = cmap(norm_val * 0.8 + 0.2) if norm_val > 0 else (1,1,1,1)
-                            rect = plt.Rectangle((x, y), cell_width, cell_height, 
+                            rect = plt.Rectangle((x, y), cell_width, cell_height,
                                                  facecolor=color, edgecolor='black')
                             ax.add_patch(rect)
-                            ax.text(x+0.5*cell_width, y+0.5*cell_height, str(z), 
+                            ax.text(x + 0.5*cell_width, y + 0.5*cell_height, str(z),
                                     ha='center', va='center', fontsize=10, color='black')
                         else:
                             # blank cell
-                            rect = plt.Rectangle((x, y), cell_width, cell_height, 
+                            rect = plt.Rectangle((x, y), cell_width, cell_height,
                                                  facecolor='white', edgecolor='black')
                             ax.add_patch(rect)
 
                 ax.set_xlim(0, 3*cell_width)
                 ax.set_ylim(0, 5*cell_height)
 
-                # Convert plot to base64
+                # Save plot to buffer, then base64-encode
                 buf = BytesIO()
                 plt.savefig(buf, format='png', bbox_inches='tight')
                 buf.seek(0)
@@ -258,31 +270,36 @@ if exit_velocity_file:
     except Exception as e:
         st.error(f"An error occurred while processing the Exit Velocity file: {e}")
 
-# ----------------------------
+# ---------------------------------------------------------
 # DISPLAY RESULTS IN STREAMLIT
-# ----------------------------
+# ---------------------------------------------------------
 st.write("## Calculated Metrics")
 if bat_speed_metrics:
     st.markdown(bat_speed_metrics)
 
 if exit_velocity_metrics:
     st.markdown(exit_velocity_metrics)
-    # Display the heatmap in Streamlit
-    if strike_zone_img_data:
-        heatmap_html = f"<h3>Strike Zone Top 8% Exit Velocities</h3><img src='data:image/png;base64,{strike_zone_img_data}'/>"
-        st.markdown(heatmap_html, unsafe_allow_html=True)
 
-# Get additional user inputs for the email
+    if strike_zone_img_data:
+        # Show the chart in Streamlit using data URI
+        chart_html = f"<h3>Strike Zone Average Exit Velocity</h3><img src='data:image/png;base64,{strike_zone_img_data}'/>"
+        st.markdown(chart_html, unsafe_allow_html=True)
+
+# ---------------------------------------------------------
+# COLLECT EMAIL FIELDS
+# ---------------------------------------------------------
 player_name = st.text_input("Enter Player Name")
 date_range = st.text_input("Enter Date Range")
 
-# Email configuration
-email_address = "otrdatatrack@gmail.com"   # Your own email
-email_password = "pslp fuab dmub cggo"     # App-specific or your SMTP password
+email_address = "otrdatatrack@gmail.com"  # Sender email
+email_password = "pslp fuab dmub cggo"    # App-specific or SMTP password
 smtp_server = "smtp.gmail.com"
 smtp_port = 587
 
-def send_email_report(
+# ---------------------------------------------------------
+# SEND EMAIL USING CID
+# ---------------------------------------------------------
+def send_email_report_cid(
     recipient_email,
     bat_speed_metrics,
     exit_velocity_metrics,
@@ -293,68 +310,85 @@ def send_email_report(
     strike_zone_img_data
 ):
     """
-    Sends an HTML email with embedded base64 chart (data: URI).
+    Send an HTML email with the strike-zone image attached as a 'cid' inline image.
     """
-    msg = MIMEMultipart('alternative')
-    msg['From'] = email_address
-    msg['To'] = recipient_email
-    msg['Subject'] = "OTR Baseball Metrics and Grade Report"
+    # 1) Create a MIMEMultipart 'related' container for HTML + image
+    msg_root = MIMEMultipart('related')
+    msg_root['From'] = email_address
+    msg_root['To'] = recipient_email
+    msg_root['Subject'] = "OTR Baseball Metrics and Grade Report (CID)"
 
-    # Build the email HTML
+    # 2) Build the HTML with a reference to 'cid:strike_zone_image'
     email_html = f"""
     <html>
     <body style="color: black; background-color: white;">
         <h2 style="color: black;">OTR Metrics Report</h2>
-        <p style="color: black;"><strong>Player Name:</strong> {player_name}</p>
-        <p style="color: black;"><strong>Date Range:</strong> {date_range}</p>
+        <p><strong>Player Name:</strong> {player_name}</p>
+        <p><strong>Date Range:</strong> {date_range}</p>
     """
 
     if bat_speed_metrics:
-        email_html += f"<p style='color: black;'><strong>Bat Speed Level:</strong> {bat_speed_level}</p>"
+        email_html += f"<p><strong>Bat Speed Level:</strong> {bat_speed_level}</p>"
     if exit_velocity_metrics:
-        email_html += f"<p style='color: black;'><strong>Exit Velocity Level:</strong> {exit_velocity_level}</p>"
+        email_html += f"<p><strong>Exit Velocity Level:</strong> {exit_velocity_level}</p>"
 
-    email_html += "<p style='color: black;'>Below is your performance against benchmarks for each level.</p>"
+    email_html += "<p>The following data is constructed with benchmarks for each level.</p>"
 
     # Insert bat speed and exit velocity sections
     if bat_speed_metrics:
-        email_html += f"<div style='color: black;'>{bat_speed_metrics}</div>"
+        # Convert the Markdown metrics to HTML, or just inline them as text
+        email_html += f"<div>{bat_speed_metrics}</div>"
     if exit_velocity_metrics:
-        email_html += f"<div style='color: black;'>{exit_velocity_metrics}</div>"
+        email_html += f"<div>{exit_velocity_metrics}</div>"
 
-    # Embed the strike-zone heatmap as a data URI if available
+    # Add the heatmap if available
     if strike_zone_img_data:
-        email_html += f"""
-        <h3 style="color: black;">Strike Zone Top 8% Exit Velocities</h3>
-        <img src="data:image/png;base64,{strike_zone_img_data}" alt="Strike Zone Heatmap" />
+        email_html += """
+        <h3>Strike Zone Average Exit Velocity</h3>
+        <img src="cid:strike_zone_image" alt="Strike Zone Heatmap" />
         """
 
     email_html += """
-    <p style='color: black;'>Best Regards,<br>OTR Baseball</p>
+    <p>Best Regards,<br>OTR Baseball</p>
     </body>
     </html>
     """
 
-    # Attach the HTML body
-    msg.attach(MIMEText(email_html, 'html'))
+    # 3) Create a MIMEMultipart('alternative') to hold the HTML
+    msg_alternative = MIMEMultipart('alternative')
+    msg_root.attach(msg_alternative)
 
-    # Send the email
+    # 4) Attach HTML into the alternative part
+    msg_text = MIMEText(email_html, 'html')
+    msg_alternative.attach(msg_text)
+
+    # 5) If we have the strike zone image, attach it with Content-ID = 'strike_zone_image'
+    if strike_zone_img_data:
+        img_data_content = base64.b64decode(strike_zone_img_data)  # decode from base64
+        msg_image = MIMEImage(img_data_content, _subtype='png')
+        msg_image.add_header('Content-ID', '<strike_zone_image>')
+        msg_image.add_header('Content-Disposition', 'inline', filename='strike_zone.png')
+        msg_root.attach(msg_image)
+
+    # 6) Send
     try:
         with smtplib.SMTP(smtp_server, smtp_port) as server:
             server.starttls()
             server.login(email_address, email_password)
-            server.send_message(msg)
+            server.send_message(msg_root)
         st.success("Report sent successfully!")
     except Exception as e:
         st.error(f"Failed to send email: {e}")
 
-# UI to send email
+# ---------------------------------------------------------
+# STREAMLIT: SEND EMAIL BUTTON
+# ---------------------------------------------------------
 st.write("## Email the Report")
 recipient_email = st.text_input("Enter Recipient Email")
 
 if st.button("Send Report"):
     if recipient_email:
-        send_email_report(
+        send_email_report_cid(
             recipient_email,
             bat_speed_metrics,
             exit_velocity_metrics,
