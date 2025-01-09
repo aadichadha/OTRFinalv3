@@ -1,48 +1,47 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import smtplib
 import base64
 from io import BytesIO
-
-# Email libraries
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.mime.image import MIMEImage
-
+from email.mime.application import MIMEApplication  # For attaching PDFs
 import matplotlib
-matplotlib.use('Agg')  # Use a non-interactive backend
+matplotlib.use('Agg')  # Non-interactive backend
 import matplotlib.pyplot as plt
-import numpy as np
+from fpdf import FPDF
+import tempfile
 
-# ---------------------------------------------------------
-# STREAMLIT UI: Title and Introduction
-# ---------------------------------------------------------
-st.title("OTR Baseball Metrics Analyzer (CID Approach)")
-st.write("Upload your Bat Speed and Exit Velocity CSV files to generate a comprehensive report.")
+# ---------------------------
+# STREAMLIT UI
+# ---------------------------
+st.title("OTR Baseball Metrics Analyzer (PDF Report)")
 
-# File Uploads
 bat_speed_file = st.file_uploader("Upload Bat Speed File", type="csv")
 exit_velocity_file = st.file_uploader("Upload Exit Velocity File", type="csv")
 
-# Dropdown for Bat Speed Level
 bat_speed_level = st.selectbox(
     "Select Player Level for Bat Speed",
     ["Youth", "High School", "College", "Indy", "Affiliate"]
 )
 
-# Dropdown for Exit Velocity Level
 exit_velocity_level = st.selectbox(
     "Select Player Level for Exit Velocity",
     ["10u", "12u", "14u", "JV/16u", "Var/18u", "College", "Indy", "Affiliate"]
 )
 
-# Debugging: Ensure levels are selected correctly
-st.write(f"Selected Bat Speed Level: {bat_speed_level}")
-st.write(f"Selected Exit Velocity Level: {exit_velocity_level}")
+# Email config
+email_address = "otrdatatrack@gmail.com"
+email_password = "YOUR_APP_OR_SMTP_PASSWORD_HERE"
+smtp_server = "smtp.gmail.com"
+smtp_port = 587
 
-# ---------------------------------------------------------
-# BENCHMARKS
-# ---------------------------------------------------------
+# Player info
+player_name = st.text_input("Enter Player Name")
+date_range = st.text_input("Enter Date Range")
+
+# Benchmarks
 benchmarks = {
     "10u": {
         "Avg EV": 50, "Top 8th EV": 61,
@@ -95,10 +94,10 @@ def evaluate_performance(metric, benchmark, lower_is_better=False, special_metri
     """
     Grades the metric against a benchmark.
     special_metric=True means we allow a small range around the benchmark
-    for "Average" (useful for exit velocity).
+    for "Average" (useful for EV).
     """
     if special_metric:
-        # For EV: "Average" if within 3 mph below the benchmark
+        # For EV: "Average" if metric in [benchmark-3, benchmark]
         if benchmark - 3 <= metric <= benchmark:
             return "Average"
         elif metric < benchmark - 3:
@@ -107,7 +106,6 @@ def evaluate_performance(metric, benchmark, lower_is_better=False, special_metri
             return "Above Average"
     else:
         if lower_is_better:
-            # For Time to Contact: smaller is better
             if metric < benchmark:
                 return "Above Average"
             elif metric <= benchmark * 1.1:
@@ -115,7 +113,6 @@ def evaluate_performance(metric, benchmark, lower_is_better=False, special_metri
             else:
                 return "Below Average"
         else:
-            # For speeds, angles, etc.: bigger is better
             if metric > benchmark:
                 return "Above Average"
             elif metric >= benchmark * 0.9:
@@ -123,280 +120,269 @@ def evaluate_performance(metric, benchmark, lower_is_better=False, special_metri
             else:
                 return "Below Average"
 
-# ---------------------------------------------------------
-# GLOBALS for storing final metrics & image data
-# ---------------------------------------------------------
-bat_speed_metrics = None
-exit_velocity_metrics = None
-strike_zone_img_data = None  # We'll store Base64 for the heatmap here
+# Variables to store final metrics
+bat_speed_text = None
+exit_velocity_text = None
+strike_zone_fig = None
 
-# ---------------------------------------------------------
-# PROCESS BAT SPEED FILE (Skip the first 8 rows)
-# ---------------------------------------------------------
+# -------------------------
+# Process Bat Speed File
+# -------------------------
 if bat_speed_file:
     df_bat_speed = pd.read_csv(bat_speed_file, skiprows=8)
-    bat_speed_data = pd.to_numeric(df_bat_speed.iloc[:, 7], errors='coerce')  # Column H: Bat Speed
-    attack_angle_data = pd.to_numeric(df_bat_speed.iloc[:, 10], errors='coerce')  # Column K: Attack Angle
-    time_to_contact_data = pd.to_numeric(df_bat_speed.iloc[:, 15], errors='coerce')  # Column P (check your CSV)
+    bat_speed_data = pd.to_numeric(df_bat_speed.iloc[:, 7], errors='coerce')   # Column H
+    attack_angle_data = pd.to_numeric(df_bat_speed.iloc[:, 10], errors='coerce')  # Column K
+    time_to_contact_data = pd.to_numeric(df_bat_speed.iloc[:, 15], errors='coerce')  # Column P?
 
     player_avg_bat_speed = bat_speed_data.mean()
     top_10_percent_bat_speed = bat_speed_data.quantile(0.90)
     avg_attack_angle_top_10 = attack_angle_data[bat_speed_data >= top_10_percent_bat_speed].mean()
     avg_time_to_contact = time_to_contact_data.mean()
 
-    # Fetch benchmarks
-    bat_speed_benchmark = benchmarks[bat_speed_level]["Avg BatSpeed"]
-    top_90_benchmark = benchmarks[bat_speed_level]["90th% BatSpeed"]
-    time_to_contact_benchmark = benchmarks[bat_speed_level]["Avg TimeToContact"]
-    attack_angle_benchmark = benchmarks[bat_speed_level]["Avg AttackAngle"]
+    # Benchmarks
+    b_bench = benchmarks[bat_speed_level]
+    bat_speed_benchmark = b_bench["Avg BatSpeed"]
+    top_90_benchmark = b_bench["90th% BatSpeed"]
+    time_to_contact_benchmark = b_bench["Avg TimeToContact"]
+    attack_angle_benchmark = b_bench["Avg AttackAngle"]
 
-    # Build a markdown text chunk for the final report
-    bat_speed_metrics = (
-        "### Bat Speed Metrics\n"
-        f"- **Player Average Bat Speed:** {player_avg_bat_speed:.2f} mph (Benchmark: {bat_speed_benchmark} mph)\n"
-        f"  - Player Grade: {evaluate_performance(player_avg_bat_speed, bat_speed_benchmark)}\n"
-        f"- **Top 10% Bat Speed:** {top_10_percent_bat_speed:.2f} mph (Benchmark: {top_90_benchmark} mph)\n"
-        f"  - Player Grade: {evaluate_performance(top_10_percent_bat_speed, top_90_benchmark)}\n"
-        f"- **Average Attack Angle (Top 10% Bat Speed Swings):** {avg_attack_angle_top_10:.2f}° (Benchmark: {attack_angle_benchmark}°)\n"
-        f"  - Player Grade: {evaluate_performance(avg_attack_angle_top_10, attack_angle_benchmark)}\n"
-        f"- **Average Time to Contact:** {avg_time_to_contact:.3f} sec (Benchmark: {time_to_contact_benchmark} sec)\n"
-        f"  - Player Grade: {evaluate_performance(avg_time_to_contact, time_to_contact_benchmark, lower_is_better=True)}\n"
+    # Build a text summary
+    bat_speed_text = (
+        f"### Bat Speed Metrics\n"
+        f"Player Avg Bat Speed: {player_avg_bat_speed:.2f} mph (Benchmark: {bat_speed_benchmark})\n"
+        f"  - Grade: {evaluate_performance(player_avg_bat_speed, bat_speed_benchmark)}\n\n"
+        f"Top 10% Bat Speed: {top_10_percent_bat_speed:.2f} mph (Benchmark: {top_90_benchmark})\n"
+        f"  - Grade: {evaluate_performance(top_10_percent_bat_speed, top_90_benchmark)}\n\n"
+        f"Avg Attack Angle (Top 10% Swings): {avg_attack_angle_top_10:.2f}° (Benchmark: {attack_angle_benchmark}°)\n"
+        f"  - Grade: {evaluate_performance(avg_attack_angle_top_10, attack_angle_benchmark)}\n\n"
+        f"Avg Time to Contact: {avg_time_to_contact:.3f} sec (Benchmark: {time_to_contact_benchmark} sec)\n"
+        f"  - Grade: {evaluate_performance(avg_time_to_contact, time_to_contact_benchmark, lower_is_better=True)}\n"
     )
 
-# ---------------------------------------------------------
-# PROCESS EXIT VELOCITY FILE (No rows skipped)
-# ---------------------------------------------------------
+# ---------------------------
+# Process Exit Velocity File
+# ---------------------------
 if exit_velocity_file:
     df_exit_velocity = pd.read_csv(exit_velocity_file)
-    try:
-        # According to instructions:
-        # Column F (Index 5) = Strike Zone
-        # Column H (Index 7) = EV
-        # Column I (Index 8) = LA
-        # Column J (Index 9) = Dist
+    if len(df_exit_velocity.columns) > 9:
+        strike_zone_data = df_exit_velocity.iloc[:, 5]  # F
+        exit_velocity_data = pd.to_numeric(df_exit_velocity.iloc[:, 7], errors='coerce')  # H
+        launch_angle_data = pd.to_numeric(df_exit_velocity.iloc[:, 8], errors='coerce')   # I
+        distance_data = pd.to_numeric(df_exit_velocity.iloc[:, 9], errors='coerce')       # J
 
-        if len(df_exit_velocity.columns) > 9:
-            strike_zone_data = df_exit_velocity.iloc[:, 5]
-            exit_velocity_data = pd.to_numeric(df_exit_velocity.iloc[:, 7], errors='coerce')
-            launch_angle_data = pd.to_numeric(df_exit_velocity.iloc[:, 8], errors='coerce')
-            distance_data = pd.to_numeric(df_exit_velocity.iloc[:, 9], errors='coerce')
+        non_zero_ev_rows = exit_velocity_data[exit_velocity_data > 0]
+        if not non_zero_ev_rows.empty:
+            exit_velocity_avg = non_zero_ev_rows.mean()
+            top_8_percent_ev = non_zero_ev_rows.quantile(0.92)
 
-            # Filter out zero or invalid EV rows
-            non_zero_ev_rows = exit_velocity_data[exit_velocity_data > 0]
-            if not non_zero_ev_rows.empty:
-                # Calculate metrics
-                exit_velocity_avg = non_zero_ev_rows.mean()
-                top_8_percent_exit_velocity = non_zero_ev_rows.quantile(0.92)
+            top_8_mask = exit_velocity_data >= top_8_percent_ev
+            avg_launch_angle_top_8 = launch_angle_data[top_8_mask].mean()
+            avg_distance_top_8 = distance_data[top_8_mask].mean()
+            total_avg_launch_angle = launch_angle_data[launch_angle_data > 0].mean()
 
-                top_8_mask = exit_velocity_data >= top_8_percent_exit_velocity
-                avg_launch_angle_top_8 = launch_angle_data[top_8_mask].mean()
-                avg_distance_top_8 = distance_data[top_8_mask].mean()
-                total_avg_launch_angle = launch_angle_data[launch_angle_data > 0].mean()
+            # Benchmarks
+            e_bench = benchmarks[exit_velocity_level]
+            ev_benchmark = e_bench["Avg EV"]
+            top_8_benchmark = e_bench["Top 8th EV"]
+            la_benchmark = e_bench["Avg LA"]
+            hhb_la_benchmark = e_bench["HHB LA"]
 
-                # Benchmarks
-                ev_benchmark = benchmarks[exit_velocity_level]["Avg EV"]
-                top_8_benchmark = benchmarks[exit_velocity_level]["Top 8th EV"]
-                la_benchmark = benchmarks[exit_velocity_level]["Avg LA"]
-                hhb_la_benchmark = benchmarks[exit_velocity_level]["HHB LA"]
+            exit_velocity_text = (
+                f"### Exit Velocity Metrics\n"
+                f"Average EV (non-zero): {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark})\n"
+                f"  - Grade: {evaluate_performance(exit_velocity_avg, ev_benchmark, special_metric=True)}\n\n"
+                f"Top 8% EV: {top_8_percent_ev:.2f} mph (Benchmark: {top_8_benchmark})\n"
+                f"  - Grade: {evaluate_performance(top_8_percent_ev, top_8_benchmark, special_metric=True)}\n\n"
+                f"Avg LA (top 8% EV): {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
+                f"  - Grade: {evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark)}\n\n"
+                f"Total Avg LA: {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
+                f"  - Grade: {evaluate_performance(total_avg_launch_angle, la_benchmark)}\n\n"
+                f"Average Distance (top 8% EV): {avg_distance_top_8:.2f} ft\n"
+            )
 
-                # Build text for the final metrics
-                exit_velocity_metrics = (
-                    "### Exit Velocity Metrics\n"
-                    f"- **Average Exit Velocity (Non-zero EV):** {exit_velocity_avg:.2f} mph (Benchmark: {ev_benchmark} mph)\n"
-                    f"  - Player Grade: {evaluate_performance(exit_velocity_avg, ev_benchmark, special_metric=True)}\n"
-                    f"- **Top 8% Exit Velocity:** {top_8_percent_exit_velocity:.2f} mph (Benchmark: {top_8_benchmark} mph)\n"
-                    f"  - Player Grade: {evaluate_performance(top_8_percent_exit_velocity, top_8_benchmark, special_metric=True)}\n"
-                    f"- **Average Launch Angle (On Top 8% EV Swings):** {avg_launch_angle_top_8:.2f}° (Benchmark: {hhb_la_benchmark}°)\n"
-                    f"  - Player Grade: {evaluate_performance(avg_launch_angle_top_8, hhb_la_benchmark)}\n"
-                    f"- **Total Average Launch Angle (Avg LA):** {total_avg_launch_angle:.2f}° (Benchmark: {la_benchmark}°)\n"
-                    f"  - Player Grade: {evaluate_performance(total_avg_launch_angle, la_benchmark)}\n"
-                    f"- **Average Distance (8% swings):** {avg_distance_top_8:.2f} ft\n"
-                )
+            # ---- Build Strike-Zone Plot ----
+            top_8_df = df_exit_velocity[top_8_mask].copy()
+            top_8_df["StrikeZone"] = top_8_df.iloc[:, 5]
+            zone_counts = top_8_df["StrikeZone"].value_counts()
 
-                # -------- Create Strike-Zone Heatmap ----------
-                top_8_df = df_exit_velocity[top_8_mask].copy()
-                top_8_df["StrikeZone"] = top_8_df.iloc[:, 5]  # Column F
-                zone_counts = top_8_df["StrikeZone"].value_counts()
+            zone_layout = [
+                [10, None, 11],
+                [1,  2,  3],
+                [4,  5,  6],
+                [7,  8,  9],
+                [12, None, 13]
+            ]
+            max_count = zone_counts.max() if not zone_counts.empty else 0
 
-                # Layout
-                zone_layout = [
-                    [10, None, 11],
-                    [1,   2,    3],
-                    [4,   5,    6],
-                    [7,   8,    9],
-                    [12, None, 13]
-                ]
-                max_count = zone_counts.max() if not zone_counts.empty else 0
+            fig, ax = plt.subplots(figsize=(3,5))
+            ax.axis('off')
+            cmap = plt.get_cmap('Reds')
+            cell_w = 1.0
+            cell_h = 1.0
 
-                # Plot with matplotlib
-                fig, ax = plt.subplots(figsize=(3,5))
-                ax.axis('off')
-                cmap = plt.get_cmap('Reds')
-                cell_width = 1.0
-                cell_height = 1.0
-
-                for r, row_zones in enumerate(zone_layout):
-                    for c, z in enumerate(row_zones):
-                        x = c * cell_width
-                        y = (len(zone_layout)-1 - r) * cell_height
-                        if z is not None:
-                            count = zone_counts.get(z, 0)
-                            norm_val = (count / max_count) if max_count > 0 else 0
-                            color = cmap(norm_val * 0.8 + 0.2) if norm_val > 0 else (1,1,1,1)
-                            rect = plt.Rectangle((x, y), cell_width, cell_height,
-                                                 facecolor=color, edgecolor='black')
-                            ax.add_patch(rect)
-                            ax.text(x + 0.5*cell_width, y + 0.5*cell_height, str(z),
-                                    ha='center', va='center', fontsize=10, color='black')
-                        else:
-                            # blank cell
-                            rect = plt.Rectangle((x, y), cell_width, cell_height,
-                                                 facecolor='white', edgecolor='black')
-                            ax.add_patch(rect)
-
-                ax.set_xlim(0, 3*cell_width)
-                ax.set_ylim(0, 5*cell_height)
-
-                # Save plot to buffer, then base64-encode
-                buf = BytesIO()
-                plt.savefig(buf, format='png', bbox_inches='tight')
-                buf.seek(0)
-                strike_zone_img_data = base64.b64encode(buf.read()).decode('utf-8')
-                plt.close(fig)
-            else:
-                st.error("No valid Exit Velocity data found in the file. Please check the data.")
+            for r, row_zones in enumerate(zone_layout):
+                for c, z in enumerate(row_zones):
+                    x = c * cell_w
+                    y = (len(zone_layout)-1 - r) * cell_h
+                    if z is not None:
+                        count = zone_counts.get(z, 0)
+                        norm_val = (count / max_count) if max_count > 0 else 0
+                        color = cmap(norm_val*0.8 + 0.2) if norm_val > 0 else (1,1,1,1)
+                        rect = plt.Rectangle((x,y), cell_w, cell_h, facecolor=color, edgecolor='black')
+                        ax.add_patch(rect)
+                        ax.text(x+0.5*cell_w, y+0.5*cell_h, str(z),
+                                ha='center', va='center', fontsize=10)
+                    else:
+                        rect = plt.Rectangle((x,y), cell_w, cell_h, facecolor='white', edgecolor='black')
+                        ax.add_patch(rect)
+            ax.set_xlim(0, 3*cell_w)
+            ax.set_ylim(0, 5*cell_h)
+            strike_zone_fig = fig  # We'll store the figure for the PDF
         else:
-            st.error("The uploaded file does not have the required columns for Exit Velocity.")
-    except Exception as e:
-        st.error(f"An error occurred while processing the Exit Velocity file: {e}")
+            st.error("No valid (non-zero) exit velocity data found.")
+    else:
+        st.error("The uploaded file does not have the required columns for EV.")
 
-# ---------------------------------------------------------
-# DISPLAY RESULTS IN STREAMLIT
-# ---------------------------------------------------------
+# Display in Streamlit
 st.write("## Calculated Metrics")
-if bat_speed_metrics:
-    st.markdown(bat_speed_metrics)
+if bat_speed_text:
+    st.markdown(bat_speed_text)
+if exit_velocity_text:
+    st.markdown(exit_velocity_text)
+    if strike_zone_fig:
+        buf = BytesIO()
+        strike_zone_fig.savefig(buf, format='png', bbox_inches='tight')
+        buf.seek(0)
+        data_uri = base64.b64encode(buf.read()).decode('utf-8')
+        st.markdown(
+            f"<h3>Strike Zone Heatmap</h3><img src='data:image/png;base64,{data_uri}'/>",
+            unsafe_allow_html=True
+        )
 
-if exit_velocity_metrics:
-    st.markdown(exit_velocity_metrics)
-
-    if strike_zone_img_data:
-        # Show the chart in Streamlit using data URI
-        chart_html = f"<h3>Strike Zone Average Exit Velocity</h3><img src='data:image/png;base64,{strike_zone_img_data}'/>"
-        st.markdown(chart_html, unsafe_allow_html=True)
-
-# ---------------------------------------------------------
-# COLLECT EMAIL FIELDS
-# ---------------------------------------------------------
-player_name = st.text_input("Enter Player Name")
-date_range = st.text_input("Enter Date Range")
-
-email_address = "otrdatatrack@gmail.com"  # Sender email
-email_password = "pslp fuab dmub cggo"    # App-specific or SMTP password
-smtp_server = "smtp.gmail.com"
-smtp_port = 587
-
-# ---------------------------------------------------------
-# SEND EMAIL USING CID
-# ---------------------------------------------------------
-def send_email_report_cid(
-    recipient_email,
-    bat_speed_metrics,
-    exit_velocity_metrics,
+# --------------------------
+# GENERATE PDF
+# --------------------------
+def generate_pdf_report(
     player_name,
     date_range,
     bat_speed_level,
     exit_velocity_level,
-    strike_zone_img_data
-):
+    bat_speed_text,
+    exit_velocity_text,
+    strike_zone_fig
+) -> bytes:
     """
-    Send an HTML email with the strike-zone image attached as a 'cid' inline image.
+    Creates a PDF file in memory with:
+    1) Title, Player info
+    2) Bat Speed & EV metrics text
+    3) The strike-zone chart if available
+    Returns the PDF bytes.
     """
-    # 1) Create a MIMEMultipart 'related' container for HTML + image
-    msg_root = MIMEMultipart('related')
-    msg_root['From'] = email_address
-    msg_root['To'] = recipient_email
-    msg_root['Subject'] = "OTR Baseball Metrics and Grade Report (CID)"
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 16)
 
-    # 2) Build the HTML with a reference to 'cid:strike_zone_image'
-    email_html = f"""
-    <html>
-    <body style="color: black; background-color: white;">
-        <h2 style="color: black;">OTR Metrics Report</h2>
-        <p><strong>Player Name:</strong> {player_name}</p>
-        <p><strong>Date Range:</strong> {date_range}</p>
+    # Title
+    pdf.cell(0, 10, "OTR Baseball Metrics Report", ln=1, align='C')
+    pdf.ln(5)
+
+    # Player info
+    pdf.set_font("Arial", "", 12)
+    pdf.cell(0, 6, f"Player Name: {player_name}", ln=1)
+    pdf.cell(0, 6, f"Date Range: {date_range}", ln=1)
+    pdf.cell(0, 6, f"Bat Speed Level: {bat_speed_level}", ln=1)
+    pdf.cell(0, 6, f"Exit Velocity Level: {exit_velocity_level}", ln=1)
+    pdf.ln(5)
+
+    # Bat Speed text
+    if bat_speed_text:
+        pdf.set_font("Arial", "B", 14)
+        pdf.cell(0, 8, "Bat Speed Metrics", ln=1)
+        pdf.set_font("Arial", "", 12)
+        for line in bat_speed_text.split('\n'):
+            pdf.multi_cell(0, 6, line)
+        pdf.ln(3)
+
+    # EV text
+    if exit_velocity_text:
+        pdf.set_font("Arial", "B", 14)
+        pdf.cell(0, 8, "Exit Velocity Metrics", ln=1)
+        pdf.set_font("Arial", "", 12)
+        for line in exit_velocity_text.split('\n'):
+            pdf.multi_cell(0, 6, line)
+        pdf.ln(3)
+
+    # Strike-zone chart
+    if strike_zone_fig:
+        # Save the figure temporarily
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+            strike_zone_fig.savefig(tmp.name, format='png', bbox_inches='tight')
+            tmp.flush()
+            # Insert the image into PDF
+            pdf.add_page()  # new page for the chart
+            pdf.set_font("Arial", "B", 14)
+            pdf.cell(0, 8, "Strike Zone Heatmap", ln=1)
+            pdf.image(tmp.name, x=10, y=30, w=100)  # adjust as you like
+
+    # Return PDF as bytes
+    out_bytes = BytesIO()
+    pdf.output(out_bytes, 'F')
+    return out_bytes.getvalue()
+
+# --------------------------
+# SEND EMAIL WITH PDF
+# --------------------------
+def send_email_with_pdf(recipient_email, pdf_bytes):
     """
-
-    if bat_speed_metrics:
-        email_html += f"<p><strong>Bat Speed Level:</strong> {bat_speed_level}</p>"
-    if exit_velocity_metrics:
-        email_html += f"<p><strong>Exit Velocity Level:</strong> {exit_velocity_level}</p>"
-
-    email_html += "<p>The following data is constructed with benchmarks for each level.</p>"
-
-    # Insert bat speed and exit velocity sections
-    if bat_speed_metrics:
-        # Convert the Markdown metrics to HTML, or just inline them as text
-        email_html += f"<div>{bat_speed_metrics}</div>"
-    if exit_velocity_metrics:
-        email_html += f"<div>{exit_velocity_metrics}</div>"
-
-    # Add the heatmap if available
-    if strike_zone_img_data:
-        email_html += """
-        <h3>Strike Zone Average Exit Velocity</h3>
-        <img src="cid:strike_zone_image" alt="Strike Zone Heatmap" />
-        """
-
-    email_html += """
-    <p>Best Regards,<br>OTR Baseball</p>
-    </body>
-    </html>
+    Sends an email with the PDF (in pdf_bytes) attached.
     """
+    msg = MIMEMultipart()
+    msg["From"] = email_address
+    msg["To"] = recipient_email
+    msg["Subject"] = "OTR Baseball Metrics PDF Report"
 
-    # 3) Create a MIMEMultipart('alternative') to hold the HTML
-    msg_alternative = MIMEMultipart('alternative')
-    msg_root.attach(msg_alternative)
+    # Body text
+    body = """Hello,
 
-    # 4) Attach HTML into the alternative part
-    msg_text = MIMEText(email_html, 'html')
-    msg_alternative.attach(msg_text)
+Please find attached your OTR Baseball metrics report in PDF format.
 
-    # 5) If we have the strike zone image, attach it with Content-ID = 'strike_zone_image'
-    if strike_zone_img_data:
-        img_data_content = base64.b64decode(strike_zone_img_data)  # decode from base64
-        msg_image = MIMEImage(img_data_content, _subtype='png')
-        msg_image.add_header('Content-ID', '<strike_zone_image>')
-        msg_image.add_header('Content-Disposition', 'inline', filename='strike_zone.png')
-        msg_root.attach(msg_image)
+Best,
+OTR Baseball
+"""
+    msg.attach(MIMEText(body, "plain"))
 
-    # 6) Send
+    # Attach PDF
+    attachment = MIMEApplication(pdf_bytes, _subtype="pdf")
+    attachment.add_header('Content-Disposition', 'attachment', filename="OTR_Report.pdf")
+    msg.attach(attachment)
+
     try:
         with smtplib.SMTP(smtp_server, smtp_port) as server:
             server.starttls()
             server.login(email_address, email_password)
-            server.send_message(msg_root)
-        st.success("Report sent successfully!")
+            server.send_message(msg)
+        st.success("Report (PDF) sent successfully!")
     except Exception as e:
         st.error(f"Failed to send email: {e}")
 
-# ---------------------------------------------------------
-# STREAMLIT: SEND EMAIL BUTTON
-# ---------------------------------------------------------
-st.write("## Email the Report")
+# --------------------------
+# Streamlit: Button to Send
+# --------------------------
 recipient_email = st.text_input("Enter Recipient Email")
 
-if st.button("Send Report"):
-    if recipient_email:
-        send_email_report_cid(
-            recipient_email,
-            bat_speed_metrics,
-            exit_velocity_metrics,
+if st.button("Generate & Send PDF"):
+    if not recipient_email:
+        st.error("Please enter a valid email address.")
+    else:
+        # Build the PDF
+        pdf_data = generate_pdf_report(
             player_name,
             date_range,
             bat_speed_level,
             exit_velocity_level,
-            strike_zone_img_data
+            bat_speed_text,
+            exit_velocity_text,
+            strike_zone_fig
         )
-    else:
-        st.error("Please enter a valid email address.")
+        # Send it
+        send_email_with_pdf(recipient_email, pdf_data)
