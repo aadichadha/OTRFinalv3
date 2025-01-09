@@ -400,5 +400,3 @@ if st.button("Send Report"):
         )
     else:
         st.error("Please enter a valid email address.")
-
-
